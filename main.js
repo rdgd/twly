@@ -15,7 +15,6 @@ glob(path.join(process.cwd(), docPath), function (err, paths){
   docPaths = paths;
   docPaths.forEach(function (docPath, i) {
     fs.readFile(docPath, function (err, data) {
-      console.log(docPath);
       if (!err) { docs.push({ content: data.toString(), filePath: docPath, pi: i }); }
       if (docs.length === docPaths.length) { compareDocs(docs); }
     });
@@ -25,7 +24,6 @@ glob(path.join(process.cwd(), docPath), function (err, paths){
 console.log(chalk.green(towelie));
 
 function compareDocs (docs) {
-  console.log(docPaths);
   // i represents the "root document"
   for (var i = 0; i < docs.length; i++) {
     var iPOriginal = removeEmpty(docs[i].content.split('\n\n'));
@@ -47,6 +45,7 @@ function compareDocs (docs) {
         and for each paragraph iterating over the current "comparison document" paragraphs (z)
       */
       for (let y = 0; y < iP.length; y++) {
+        if (iP[y].length < 50) { continue; }
         for (let z = 0; z < xP.length; z++) {
           if (iP[y] === xP[z]) {
             messages.push(`Docs ${chalk.yellow(docs[i].filePath)} and ${chalk.yellow(docs[x].filePath)} repeat the following: \n\n\t ${chalk.red(iPOriginal[y])} \n`);

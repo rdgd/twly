@@ -64,7 +64,22 @@ function compare (docs) {
         if(!matches || matches && matches.length < 3) { continue; }
         for (let z = 0; z < xP.length; z++) {
           if (iP[y] === xP[z]) {
-            messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
+            var isRepeat = -1;
+            var isDupe = false;
+            messages.forEach(function (msg, ind) {
+              if (msg.docs.indexOf(docs[i].filePath) > -1 && msg.docs.indexOf(docs[x].filePath) > -1) {
+                isRepeat = ind;
+                isDupe = msg.content.indexOf(iPOriginal[y]) !== -1;
+              }
+            });
+
+           if (isDupe) {
+             continue;
+           } else if (isRepeat !== -1) {
+             messages[isRepeat].content.push(iPOriginal[y]);
+           } else {
+              messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
+            }
           }
         }
       }

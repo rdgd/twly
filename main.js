@@ -6,7 +6,6 @@ var chalk = require('chalk');
 var towelie = require('./towelie');
 var glob = require('glob');
 var path = require('path');
-var docPath = process.argv[2].toString();
 var Message = require('./message.js');
 
 init();
@@ -15,15 +14,9 @@ function init () {
   console.log(chalk.green(towelie));
 
   read(process.argv[2].toString())
-  .then(function (docs){
-    return compare(docs);
-  })
-  .then(function (messages){
-    return report(messages);
-  })
-  .catch(function (err) {
-    throw err;
-  });
+    .then(function (docs){ return compare(docs); })
+    .then(function (messages){ return report(messages); })
+    .catch(function (err) { throw err; });
 }
 
 function read (pathsToRead) {
@@ -70,8 +63,6 @@ function compare (docs) {
         let matches = iPOriginal[y].match(/\n/g);
         if(!matches || matches && matches.length < 3) { continue; }
         for (let z = 0; z < xP.length; z++) {
-         // let matches = xPOriginal[x].match(/\n/g);
-         // if((matches && matches.length < 1) || xP[x].length < 50) { continue; }
           if (iP[y] === xP[z]) {
             messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
           }
@@ -84,9 +75,7 @@ function compare (docs) {
 }
 
 function report (messages) {
-  messages.forEach(function (msg) { 
-    console.log(msg.toPlainEnglish());
-  });
+  messages.forEach(function (msg) { console.log(msg.toPlainEnglish()); });
   chalk.green(`Towelie says, don't forget your towel when you get out of the pool`);
   chalk.red(`Towelie found ${messages.length} violations!`);
 }

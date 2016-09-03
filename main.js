@@ -1,29 +1,50 @@
 #!/usr/bin/env node
+'use strict';
 
 var fs = require('fs');
 var chalk = require('chalk');
 var towelie = require('./towelie');
-var cli = require('commander');
 var glob = require('glob');
 var path = require('path');
 var docPath = process.argv[2].toString();
-var docPaths;
-var docs = [];
-var messages = [];
-// Reading in all documents and only beginning the comparison once all have been read into memory
-glob(path.join(process.cwd(), docPath), function (err, paths){
-  docPaths = paths;
-  docPaths.forEach(function (docPath, i) {
-    fs.readFile(docPath, function (err, data) {
-      if (!err) { docs.push({ content: data.toString(), filePath: docPath, pi: i }); }
-      if (docs.length === docPaths.length) { compareDocs(docs); }
+
+init();
+
+function init () {
+  console.log(chalk.green(towelie));
+
+  read(process.argv[2].toString())
+  .then(function (docs){
+    return compare(docs);
+  })
+  .then(function (messages){
+    return report(messages);
+  })
+  .catch(function (err) {
+    throw err;
+  });
+}
+
+function read (pathsToRead) {
+  // Reading in all documents and only beginning the comparison once all have been read into memory
+  return new Promise(function (resolve, reject){
+    var docs = [];
+    glob(path.join(process.cwd(), pathsToRead), function (err, paths){
+      paths.forEach(function (p, i) {
+        fs.readFile(p, function (err, data) {
+          if (err) { throw err; }
+          docs.push({ content: data.toString(), filePath: p, pi: i });
+          if (docs.length === paths.length) {
+            resolve(docs);
+          }
+        });
+      });
     });
   });
-});
+}
 
-console.log(chalk.green(towelie));
-
-function compareDocs (docs) {
+function compare (docs) {
+  var messages = [];
   // i represents the "root document"
   for (var i = 0; i < docs.length; i++) {
     var iPOriginal = removeEmpty(docs[i].content.split('\n\n'));
@@ -54,8 +75,14 @@ function compareDocs (docs) {
       }
     }
   }
-  
-  report(messages);
+
+  return messages;
+}
+
+function report (messages) {
+  messages.forEach(function (msg) { console.log(msg); });
+  chalk.green(`Towelie says, don't forget your towel when you get out of the pool`);
+  chalk.red(`Towelie found ${messages.length} violations!`);
 }
 
 function normalize (arr) {
@@ -64,10 +91,4 @@ function normalize (arr) {
 
 function removeEmpty (arr) {
   return arr.filter(function (arr) { return arr !== ''; });
-}
-
-function report (messages) {
-  messages.forEach(function (msg) { console.log(msg); });
-  chalk.green(`Towelie says, don't forget your towel when you get out of the pool`);
-  chalk.red(`Towelie found ${messages.length} violations!`);
 }

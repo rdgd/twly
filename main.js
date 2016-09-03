@@ -7,6 +7,7 @@ var towelie = require('./towelie');
 var glob = require('glob');
 var path = require('path');
 var docPath = process.argv[2].toString();
+var Message = require('./message.js');
 
 init();
 
@@ -57,7 +58,7 @@ function compare (docs) {
       if (i === x) { continue; }
       // First let's check for total equality. If equal, then no reason to compare at a deeper level.
       if (docs[i].content === docs[x].content) {
-        messages.push(`Docs ${chalk.yellow(docs[i].filePath)} and ${chalk.yellow(docs[x].filePath)} are ${chalk.red('identical')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')}`);
+        messages.push(new Message([docs[i].filePath, docs[x].filePath], 0));
         continue;
       }
 
@@ -66,10 +67,13 @@ function compare (docs) {
         and for each paragraph iterating over the current "comparison document" paragraphs (z)
       */
       for (let y = 0; y < iP.length; y++) {
-        if (iP[y].length < 50) { continue; }
+        let matches = iPOriginal[y].match(/\n/g);
+        if(!matches || matches && matches.length < 3) { continue; }
         for (let z = 0; z < xP.length; z++) {
+         // let matches = xPOriginal[x].match(/\n/g);
+         // if((matches && matches.length < 1) || xP[x].length < 50) { continue; }
           if (iP[y] === xP[z]) {
-            messages.push(`Docs ${chalk.yellow(docs[i].filePath)} and ${chalk.yellow(docs[x].filePath)} repeat the following: \n\n\t ${chalk.red(iPOriginal[y])} \n`);
+            messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
           }
         }
       }
@@ -80,7 +84,9 @@ function compare (docs) {
 }
 
 function report (messages) {
-  messages.forEach(function (msg) { console.log(msg); });
+  messages.forEach(function (msg) { 
+    console.log(msg.toPlainEnglish());
+  });
   chalk.green(`Towelie says, don't forget your towel when you get out of the pool`);
   chalk.red(`Towelie found ${messages.length} violations!`);
 }

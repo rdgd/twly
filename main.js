@@ -13,6 +13,7 @@ init();
 function init () {
   console.log(chalk.green(towelie));
 
+  // The procedure is to (1) read (2) compare the contents and (3) report towlie's findings
   read(process.argv[2].toString())
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })

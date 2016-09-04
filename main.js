@@ -3,7 +3,7 @@
 
 var fs = require('fs');
 var chalk = require('chalk');
-var towelie = require('./towelie');
+var towelie = require('./assets/towelie');
 var glob = require('glob');
 var path = require('path');
 var Message = require('./message.js');

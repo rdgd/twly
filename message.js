@@ -15,24 +15,28 @@ class Message  {
       msg += `${this.docs[0]} and ${this.docs[1]} `;
     } else {
       this.docs.forEach(function (doc, i) {
-          if (i === (this.docs.length - 1)) {
+        if (i === (this.docs.length - 1)) {
           msg += `and ${this.docs[i]} `;
-          } else {
+        } else {
           msg += `${this.docs[i]}, `;
-          }
-      });
+        }
+      }, this);
     }
 
     switch (this.type) {
-    case 0: {
-      msg += `are ${chalk.red('IDENTICAL')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')}`;
-      return msg;
-    }
-    case 1: {
-      msg += `repeat the following: \n`;
-      break;
-    }
-    default: {}
+      case 0: {
+        msg += `are ${chalk.red('IDENTICAL')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')}`;
+        return msg;
+      }
+      case 1: {
+        msg += `repeat the following: \n`;
+        break;
+      }
+      case 2: {
+        msg += `repeats the following content within the file: \n`;
+        break;
+      }
+      default: {}
     }
 
     this.content.forEach(function (content, ind) {

@@ -44,13 +44,33 @@ function compare (docs) {
   for (var i = 0; i < docs.length; i++) {
     var iPOriginal = removeEmpty(docs[i].content.split('\n\n'));
     var iP = normalize(iPOriginal);
+
+    // Check the document for repeat content within the document itself
+    for (var x = 0; x < iP.length; x++) {
+      var isDupe = false;
+      for (var m = 0; m < messages.length; m++) {
+        isDupe = iP[x] === normalize(messages[m].content)[0];
+        if (isDupe) { break; }
+      }
+
+      if (isDupe) { continue; }
+
+      for (var y = 0; y < iP.length; y++) {
+        if (x === y) { continue; }
+        if (iP[x] === iP[y]) {
+          messages.push(new Message([docs[i].filePath], 2, iPOriginal[x]));
+          break;
+        }
+      }
+    }
+
     // x represents the "comparison document"
     for (var x = 0; x < docs.length; x++) {
       var xPOriginal = removeEmpty(docs[x].content.split('\n\n'));
       var xP = normalize(xPOriginal);
 
       if (i === x) { continue; }
-      // First let's check for total equality. If equal, then no reason to compare at a deeper level.
+      // Check for total equality. If equal, then no reason to compare at a deeper level.
       if (docs[i].content === docs[x].content) {
         messages.push(new Message([docs[i].filePath, docs[x].filePath], 0));
         continue;

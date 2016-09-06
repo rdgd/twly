@@ -37,7 +37,7 @@ function read (pathsToRead) {
   // Reading in all documents and only beginning the comparison once all have been read into memory
   return new Promise(function (resolve, reject){
     var docs = [];
-    glob(path.join(process.cwd(), pathsToRead), function (err, paths){
+    glob(path.join(process.cwd(), pathsToRead), { ignore: path.join(process.cwd(), 'node_modules/**/*.*') }, function (err, paths){
       paths.forEach(function (p, i) {
         fs.readFile(p, function (err, data) {
           if (err) { throw err; }

@@ -1,12 +1,20 @@
 {
   "name": "twly",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Dry it up!",
   "main": "index.js",
   "bin": {
     "twly": "index.js"
   },
-  "keywords": ["lint", "linter", "DRY", "copy pasta", "copy paste", "static analysis", "static analyzer"],
+  "keywords": [
+    "lint",
+    "linter",
+    "DRY",
+    "copy pasta",
+    "copy paste",
+    "static analysis",
+    "static analyzer"
+  ],
   "author": "Ryan Gray <ryan.is.gray@gmail.com>",
   "license": "MIT",
   "dependencies": {

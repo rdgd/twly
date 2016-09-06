@@ -1,6 +1,6 @@
 {
-  "name": "towlie",
-  "version": "1.0.0",
+  "name": "towelie",
+  "version": "1.0.1",
   "description": "Dry it up!",
   "main": "index.js",
   "bin": {

@@ -9,6 +9,9 @@ var glob = require('glob');
 var path = require('path');
 var Message = require('./message.js');
 
+// Config
+var failureThreshold = 95;
+
 // Global stuff for reporting
 var totalLines = 0;
 var dupedLines = 0;
@@ -157,6 +160,7 @@ function removeEmpty (arr) {
 }
 
 function report (messages) {
+  let towelieScore = (100 - ((dupedLines / totalLines) *  100)).toFixed(2);
   messages.sort(function (a, b) {
     if (a.type > b.type) { return -1; }
     if (a.type < b.type) { return 1; }
@@ -171,9 +175,12 @@ function report (messages) {
       "Lines Analyzed": totalLines,
       "Duplicate Files": numFileDupes,
       "Duplicate Blocks": numParagraphDupes,
-      "Duplicate Blocks in File": numParagraphDupesInFile
+      "Duplicate Blocks Within Files": numParagraphDupesInFile
     }
   ]);
 
-  console.log(`Towelie score: ${ (100 - ((dupedLines / totalLines) *  100)).toFixed(2) }% `);
+  console.log(`Towelie score: ${ towelieScore }% `);
+  if (towelieScore < failureThreshold) {
+    process.exitCode = 1;
+  }
 }

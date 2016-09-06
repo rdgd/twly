@@ -26,7 +26,7 @@ class Message  {
 
     switch (this.type) {
       case 0: {
-        msg += `are ${chalk.red('IDENTICAL')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')} \n`;
+        msg += `are ${chalk.red('IDENTICAL')} ${chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F') + '!!!')} \n`;
         return msg;
       }
       case 1: {

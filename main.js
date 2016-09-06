@@ -8,6 +8,9 @@ var glob = require('glob');
 var path = require('path');
 var Message = require('./message.js');
 
+var totalLines = 0;
+var dupedLines = 0;
+
 init();
 
 function init () {
@@ -28,6 +31,7 @@ function read (pathsToRead) {
       paths.forEach(function (p, i) {
         fs.readFile(p, function (err, data) {
           if (err) { throw err; }
+          totalLines += numLines(data.toString());
           docs.push({ content: data.toString(), filePath: p, pi: i });
           if (docs.length === paths.length) {
             resolve(docs);
@@ -61,6 +65,7 @@ function compare (docs) {
       for (var y = 0; y < iP.length; y++) {
         if (x === y) { continue; }
         if (iP[x] === iP[y]) {
+          dupedLines += (numLines(iP[x]) * 2);
           messages.push(new Message([docs[i].filePath], 2, iPOriginal[x]));
           break;
         }
@@ -75,6 +80,7 @@ function compare (docs) {
       if (i === x) { continue; }
       // Check for total equality. If equal, then no reason to compare at a deeper level.
       if (docs[i].content === docs[x].content) {
+        dupedLines += (numLines(docs[i].content) * 2);
         messages.push(new Message([docs[i].filePath, docs[x].filePath], 0));
         continue;
       }
@@ -102,6 +108,7 @@ function compare (docs) {
            } else if (isRepeat !== -1) {
              messages[isRepeat].content.push(iPOriginal[y]);
            } else {
+              dupedLines += (numLines(iPOriginal[y]) * 2);
               messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
             }
           }
@@ -118,10 +125,16 @@ function hasMoreNewlinesThan (p, n, eq) {
   return eq ? (matches && matches.length >= n) : (matches && matches.length > n);
 }
 
+function numLines (s) {
+  let matches = s.match(/n/g);
+  return matches ? matches.length : 0; 
+}
+
 function report (messages) {
   messages.forEach(function (msg) { console.log(msg.toPlainEnglish()); });
   chalk.green(`Towelie says, don't forget your towel when you get out of the pool`);
   chalk.red(`Towelie found ${messages.length} violations!`);
+  console.log(`Relative humidity score of: ${ (100 - ((dupedLines / totalLines) *  100)).toFixed(2) }% `);
 }
 
 function normalize (arr) {

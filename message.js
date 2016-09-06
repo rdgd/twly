@@ -5,6 +5,7 @@ class Message  {
   constructor (docs, type, content) {
     this.docs = docs;
     this.type = type;
+    content = content ? content : '';
     this.content = [content];
   }
 

@@ -45,7 +45,10 @@ function compare (docs) {
     var iPOriginal = removeEmpty(docs[i].content.split('\n\n'));
     var iP = normalize(iPOriginal);
 
-    // Check the document for repeat content within the document itself
+    /*
+      Check the root document for repeat content within itself. After iterating through all
+      of iP (root document's paragraphs'), we will have checked every document against itself. 
+    */
     for (var x = 0; x < iP.length; x++) {
       var isDupe = false;
       for (var m = 0; m < messages.length; m++) {
@@ -53,7 +56,7 @@ function compare (docs) {
         if (isDupe) { break; }
       }
 
-      if (isDupe) { continue; }
+      if (isDupe || !hasMoreNewlinesThan(iPOriginal[x], 3, true)) { continue; }
 
       for (var y = 0; y < iP.length; y++) {
         if (x === y) { continue; }
@@ -81,8 +84,8 @@ function compare (docs) {
         and for each paragraph iterating over the current "comparison document" paragraphs (z)
       */
       for (let y = 0; y < iP.length; y++) {
-        let matches = iPOriginal[y].match(/\n/g);
-        if(!matches || matches && matches.length < 3) { continue; }
+        if(!hasMoreNewlinesThan(iPOriginal[y], 3, true)) { continue; }
+
         for (let z = 0; z < xP.length; z++) {
           if (iP[y] === xP[z]) {
             var isRepeat = -1;
@@ -108,6 +111,11 @@ function compare (docs) {
   }
 
   return messages;
+}
+
+function hasMoreNewlinesThan (p, n, eq) {
+  let matches = p.match(/\n/g);
+  return eq ? (matches && matches.length >= n) : (matches && matches.length > n);
 }
 
 function report (messages) {

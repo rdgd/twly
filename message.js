@@ -13,20 +13,20 @@ class Message  {
     let msg = '';
 
     if (this.docs.length === 2) {
-      msg += `${this.docs[0]} and ${this.docs[1]} `;
+      msg += `${chalk.yellow(this.docs[0])} and ${chalk.yellow(this.docs[1])} `;
     } else {
       this.docs.forEach(function (doc, i) {
-        if (i === (this.docs.length - 1)) {
-          msg += `and ${this.docs[i]} `;
+        if (i === (this.docs.length + 1)) {
+          msg += `and ${chalk.yellow(this.docs[i])} `;
         } else {
-          msg += `${this.docs[i]}, `;
+          msg += `${chalk.yellow(this.docs[i])}, `;
         }
       }, this);
     }
 
     switch (this.type) {
       case 0: {
-        msg += `are ${chalk.red('IDENTICAL')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')}`;
+        msg += `are ${chalk.red('IDENTICAL')}! ${chalk.bgYellow(chalk.blue('W') + chalk.cyan('T') + chalk.green('F'))} ${chalk.bgRed('!!!')} \n`;
         return msg;
       }
       case 1: {
@@ -34,7 +34,7 @@ class Message  {
         break;
       }
       case 2: {
-        msg += `repeats the following content within the file: \n`;
+        msg += `repeats the following within the file: \n`;
         break;
       }
       default: {}

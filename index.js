@@ -20,17 +20,35 @@ function init () {
   let glob = process.argv[2];
   if(!glob) { glob = '**/*.*'; }
   // The procedure is to (1) read (2) compare the contents and (3) report towlie's findings
-  read(glob.toString())
+  configure()
+    .then(function (config) { return read(glob.toString(), config); })
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })
     .catch(function (err) { throw err; });
 }
 
-function read (pathsToRead) {
+function configure () {
+  return new Promise(function (resolve, reject) {
+    fs.readFile(process.cwd() + '/.trc', 'utf-8', function (err, data) {
+      let o = {
+        ignore: []
+      };
+      if (err) {
+        o.ignore = config.defaults.ignore;
+      } else {
+        let ignore = JSON.parse(data).ignore;
+        ignore.forEach(function (p) { o.ignore.push(path.join(process.cwd(), p)); });
+      }
+      resolve(o);
+    });
+  });
+}
+
+function read (pathsToRead, config) {
   // Reading in all documents and only beginning the comparison once all have been read into memory
-  return new Promise(function (resolve, reject){
-    let docs = [];
-    glob(path.join(process.cwd(), pathsToRead), { ignore: path.join(process.cwd(), 'node_modules/**/*.*') }, function (err, paths){
+  return new Promise(function (resolve, reject) {
+    var docs = [];
+    glob(path.join(process.cwd(), pathsToRead), config, function (err, paths){
       paths.forEach(function (p, i) {
         fs.readFile(p, function (err, data) {
           if (err) { throw err; }

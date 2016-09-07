@@ -13,6 +13,16 @@
 
 `npm install -g twly` or to include in some project `npm install twly --save-dev`
 
+# Configuration
+
+twly reads the config file `.trc`. This file should contain a JSON object.
+Currently the only supported configuration is for ignoring specific files, for which you use the "ignore" key with the value being an array of strings. For instance, if you wanted to compare all text files, but wanted to ignore foo.txt and bar.txt you could specify the following config:
+```
+  {
+    "ignore": ["foo.txt", "bar.txt"]
+  }
+```
+
 # Usage
 
 You can use twly by simply running the command `twly`. This will analyze all the files and recurse into subdirectories in your current working directory by default. You can also pass twly a glob pattern... If for example you wanted all javascript files in your current directory and all subdirectories: `twly '**/*.js'`. This will analyze all CSS files in your current working directory `twly '*.css'`.

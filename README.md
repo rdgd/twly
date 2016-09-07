@@ -15,7 +15,7 @@
 
 # Usage
 
-You can use twly by simply running the command `twly`. This will analyze all the files and recurse into subdirectories in your current working directory by default. You can also pass twly a glob pattern... If for example you wanted all javascript files in your current directory and all subdirectories: `twly **/*.js`. This will analyze all CSS files in your current working directory `twly *.css`.
+You can use twly by simply running the command `twly`. This will analyze all the files and recurse into subdirectories in your current working directory by default. You can also pass twly a glob pattern... If for example you wanted all javascript files in your current directory and all subdirectories: `twly '**/*.js'`. This will analyze all CSS files in your current working directory `twly '*.css'`.
 
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
 

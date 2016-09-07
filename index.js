@@ -5,21 +5,13 @@ require('console.table');
 var crypto = require('crypto');
 var fs = require('fs');
 var chalk = require('chalk');
-var towelie = require('./assets/towelie');
 var glob = require('glob');
 var path = require('path');
-var Message = require('./message.js');
 
-// Config
-var failureThreshold = 95;
-
-// Global stuff for reporting
-var totalLines = 0;
-var dupedLines = 0;
-var totalFiles = 0;
-var numFileDupes = 0;
-var numParagraphDupes = 0;
-var numParagraphDupesInFile = 0;
+var Message = require('./message');
+var state = require('./state');
+var config = require('./config');
+var towelie = require('./assets/towelie');
 
 init();
 
@@ -42,8 +34,8 @@ function read (pathsToRead) {
       paths.forEach(function (p, i) {
         fs.readFile(p, function (err, data) {
           if (err) { throw err; }
-          totalFiles++;
-          totalLines += numLines(data.toString());
+          state.totalFiles++;
+          state.totalLines += numLines(data.toString());
           docs.push({ content: data.toString(), filePath: p, pi: i });
           if (docs.length === paths.length) {
             resolve(docs);
@@ -66,8 +58,8 @@ function compare (docs) {
 
     // We can continue here because the first time the identical document comes through, its contents will be compared with all others
     if (hash in fullDocHashes) {
-      dupedLines += (numLines(docs[i].content) * 2);
-      numFileDupes++;
+      state.dupedLines += (numLines(docs[i].content) * 2);
+      state.numFileDupes++;
       messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash]].filePath], 0, ''));
       continue;
     }
@@ -80,10 +72,10 @@ function compare (docs) {
       if (pHash in allBlockHashes) {
         let file1 = docs[i].filePath;
         let file2 = docs[fullDocHashes[allBlockHashes[pHash]]].filePath;
-        dupedLines += (numLines(iPOriginal[p]) * 2);
-        numParagraphDupes++;
+        state.dupedLines += (numLines(iPOriginal[p]) * 2);
+        state.numParagraphDupes++;
         if (file1 === file2) {
-          numParagraphDupesInFile++;
+          state.numParagraphDupesInFile++;
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));
         } else {
           messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
@@ -95,6 +87,32 @@ function compare (docs) {
   }
 
   return messages;
+}
+
+function report (messages) {
+  let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
+  messages.sort(function (a, b) {
+    if (a.type > b.type) { return -1; }
+    if (a.type < b.type) { return 1; }
+    return 0;
+  }).forEach(function (msg) {
+    console.log(msg.toPlainEnglish());
+  });
+
+  console.table([
+    {
+      "Files Analyzed": state.totalFiles,
+      "Lines Analyzed": state.totalLines,
+      "Duplicate Files": state.numFileDupes,
+      "Duplicate Blocks": state.numParagraphDupes,
+      "Duplicate Blocks Within Files": state.numParagraphDupesInFile
+    }
+  ]);
+
+  console.log(`Towelie score: ${ towelieScore }% `);
+  if (towelieScore < config.FAILURE_THRESHOLD) {
+    process.exitCode = 1;
+  }
 }
 
 function hasDuplicateMsg (hash, msgs) {
@@ -149,30 +167,4 @@ function removeEmpty (arr) {
 
 function minify (s) {
   return s.replace(/(\n|\s)/g, '');
-}
-
-function report (messages) {
-  let towelieScore = (100 - ((dupedLines / totalLines) *  100)).toFixed(2);
-  messages.sort(function (a, b) {
-    if (a.type > b.type) { return -1; }
-    if (a.type < b.type) { return 1; }
-    return 0;
-  }).forEach(function (msg) {
-    console.log(msg.toPlainEnglish());
-  });
-
-  console.table([
-    {
-      "Files Analyzed": totalFiles,
-      "Lines Analyzed": totalLines,
-      "Duplicate Files": numFileDupes,
-      "Duplicate Blocks": numParagraphDupes,
-      "Duplicate Blocks Within Files": numParagraphDupesInFile
-    }
-  ]);
-
-  console.log(`Towelie score: ${ towelieScore }% `);
-  if (towelieScore < failureThreshold) {
-    process.exitCode = 1;
-  }
 }

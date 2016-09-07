@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
-var fs = require('fs');
 require('console.table');
+var crypto = require('crypto');
+var fs = require('fs');
 var chalk = require('chalk');
 var towelie = require('./assets/towelie');
 var glob = require('glob');
@@ -54,86 +55,73 @@ function read (pathsToRead) {
 }
 
 function compare (docs) {
-  var messages = [];
+  let messages = [];
+  let fullDocHashes = {};
+  let allBlockHashes = {};
   // i represents the "root document"
-  for (var i = 0; i < docs.length; i++) {
-    var iPOriginal = removeEmpty(docs[i].content.split('\n\n'));
-    var iP = normalize(iPOriginal);
+  for (let i = 0; i < docs.length; i++) {
+    let iPOriginal = removeEmpty(makeParagraphArray(docs[i].content));
+    let iP = normalize(iPOriginal);
+    let hash = hashString(minify(docs[i].content));
 
-    /*
-      Check the root document for repeat content within itself. After iterating through all
-      of iP (root document's paragraphs'), we will have checked every document against itself. 
-    */
-    for (var x = 0; x < iP.length; x++) {
-      var isDupe = false;
-      for (var m = 0; m < messages.length; m++) {
-        isDupe = iP[x] === normalize(messages[m].content)[0];
-        if (isDupe) { break; }
-      }
-
-      if (isDupe || !hasMoreNewlinesThan(iPOriginal[x], 3, true) || !isLongEnough(iP[x])) { continue; }
-
-      // If the content isn't recorded in a message somewhere ^^^, then test to see if it duplicates other content
-      for (var y = 0; y < iP.length; y++) {
-        if (x === y) { continue; }
-        if (iP[x] === iP[y]) {
-          dupedLines += (numLines(iP[x]) * 2);
-          numParagraphDupes++;
-          numParagraphDupesInFile++;
-          messages.push(new Message([docs[i].filePath], 2, iPOriginal[x]));
-          break;
-        }
-      }
+    // We can continue here because the first time the identical document comes through, its contents will be compared with all others
+    if (hash in fullDocHashes) {
+      dupedLines += (numLines(docs[i].content) * 2);
+      numFileDupes++;
+      messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash]].filePath], 0, ''));
+      continue;
     }
 
-    // x represents the "comparison document"
-    for (var x = 0; x < docs.length; x++) {
-      var xPOriginal = removeEmpty(docs[x].content.split('\n\n'));
-      var xP = normalize(xPOriginal);
+    fullDocHashes[hash] = i;
 
-      if (i === x) { continue; }
-      // Check for total equality. If equal, then no reason to compare at a deeper level.
-      if (docs[i].content === docs[x].content) {
-        dupedLines += (numLines(docs[i].content) * 2);
-        numFileDupes++;
-        messages.push(new Message([docs[i].filePath, docs[x].filePath], 0));
-        continue;
-      }
-
-      /*
-        Check for paragraph-level equality by iterating over the "root document" paragraphs (y), 
-        and for each paragraph iterating over the current "comparison document" paragraphs (z)
-      */
-      for (let y = 0; y < iP.length; y++) {
-        if(!hasMoreNewlinesThan(iPOriginal[y], 3, true) || !isLongEnough(iP[y])) { continue; }
-
-        for (let z = 0; z < xP.length; z++) {
-          if (iP[y] === xP[z]) {
-            var isRepeat = -1;
-            var isDupe = false;
-            messages.forEach(function (msg, ind) {
-              if (msg.docs.indexOf(docs[i].filePath) > -1 && msg.docs.indexOf(docs[x].filePath) > -1) {
-                isRepeat = ind;
-                isDupe = msg.content.indexOf(iPOriginal[y]) !== -1;
-              }
-            });
-
-           if (isDupe) {
-             continue;
-           } else if (isRepeat !== -1) {
-             messages[isRepeat].content.push(iPOriginal[y]);
-           } else {
-              dupedLines += (numLines(iPOriginal[y]) * 2);
-              numParagraphDupes++;
-              messages.push(new Message([docs[i].filePath, docs[x].filePath], 1, iPOriginal[y]));
-            }
-          }
+    for (let p = 0; p < iP.length; p++) {
+      if (!isGreatEnoughSize(iPOriginal[p])) { continue; }
+      let pHash = hashString(iP[p]);
+      if (pHash in allBlockHashes) {
+        let file1 = docs[i].filePath;
+        let file2 = docs[fullDocHashes[allBlockHashes[pHash]]].filePath;
+        dupedLines += (numLines(iPOriginal[p]) * 2);
+        numParagraphDupes++;
+        if (file1 === file2) {
+          numParagraphDupesInFile++;
+          messages.push(new Message([file1], 2, iPOriginal[p], pHash));
+        } else {
+          messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
         }
+      } else {
+        allBlockHashes[pHash] = hash;
       }
     }
   }
 
   return messages;
+}
+
+function hasDuplicateMsg (hash, msgs) {
+  let isDupe = false;
+  msgs.forEach(function (msg, ind) {
+    isDupe = hash === msg.hash;
+    if (isDupe) { return isDupe; }
+  });
+}
+
+function updateDuplicateMsg (hash, content, msgs) {
+  msgs.map(function (msg) {
+    if (msg.hash === hash) { msg.content.push(content); }
+    return msg;
+  });
+}
+
+function isGreatEnoughSize (p) {
+  return hasMoreNewlinesThan(p, 3, true) && isLongEnough(p);
+}
+
+function hashString (s) {
+  return crypto.createHash('md5').update(s).digest('hex');
+}
+
+function makeParagraphArray (s) {
+  return s.split('\n\n');
 }
 
 function isLongEnough (p) {
@@ -157,6 +145,10 @@ function normalize (arr) {
 
 function removeEmpty (arr) {
   return arr.filter(function (arr) { return arr !== ''; });
+}
+
+function minify (s) {
+  return s.replace(/(\n|\s)/g, '');
 }
 
 function report (messages) {

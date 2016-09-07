@@ -18,7 +18,7 @@ init();
 function init () {
   console.log(chalk.green(towelie));
   let glob = process.argv[2];
-  if(!glob) { throw 'You must pass a glob of files you want to analyze.' }
+  if(!glob) { glob = '**/*.*'; }
   // The procedure is to (1) read (2) compare the contents and (3) report towlie's findings
   read(glob.toString())
     .then(function (docs){ return compare(docs); })

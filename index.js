@@ -29,7 +29,7 @@ function init () {
 function read (pathsToRead) {
   // Reading in all documents and only beginning the comparison once all have been read into memory
   return new Promise(function (resolve, reject){
-    var docs = [];
+    let docs = [];
     glob(path.join(process.cwd(), pathsToRead), { ignore: path.join(process.cwd(), 'node_modules/**/*.*') }, function (err, paths){
       paths.forEach(function (p, i) {
         fs.readFile(p, function (err, data) {
@@ -37,9 +37,7 @@ function read (pathsToRead) {
           state.totalFiles++;
           state.totalLines += numLines(data.toString());
           docs.push({ content: data.toString(), filePath: p, pi: i });
-          if (docs.length === paths.length) {
-            resolve(docs);
-          }
+          if (docs.length === paths.length) { resolve(docs); }
         });
       });
     });
@@ -50,13 +48,12 @@ function compare (docs) {
   let messages = [];
   let fullDocHashes = {};
   let allBlockHashes = {};
-  // i represents the "root document"
+
   for (let i = 0; i < docs.length; i++) {
     let iPOriginal = removeEmpty(makeParagraphArray(docs[i].content));
     let iP = normalize(iPOriginal);
     let hash = hashString(minify(docs[i].content));
 
-    // We can continue here because the first time the identical document comes through, its contents will be compared with all others
     if (hash in fullDocHashes) {
       state.dupedLines += (numLines(docs[i].content) * 2);
       state.numFileDupes++;
@@ -77,6 +74,8 @@ function compare (docs) {
         if (file1 === file2) {
           state.numParagraphDupesInFile++;
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));
+        } else if (hasDuplicateMsg(pHash, messages)) {
+          continue;
         } else {
           messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
         }

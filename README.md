@@ -14,12 +14,28 @@
 `npm install -g twly` or to include in some project `npm install twly --save-dev`
 
 # Configuration
+twly has some default configuration, which translates into following configuration JSON object
 
-twly reads the config file `.trc`. This file should contain a JSON object.
-Currently the only supported configuration is for ignoring specific files, for which you use the "ignore" key with the value being an array of strings. For instance, if you wanted to compare all text files, but wanted to ignore foo.txt and bar.txt you could specify the following config:
 ```
   {
-    "ignore": ["foo.txt", "bar.txt"]
+    "failureThreshold": 95,
+    "ignore": ["node_modules/**"],
+    "minLines": 4,
+    "minChars": 100
+  }
+```
+
+twly reads the config file `.trc`. This file should contain a JSON object. For example, below is an example `.trc` file if you wanted to do the following:
+* Ignore the specific files foo.txt and bar.txt as well as all of the content in your node_modules directory
+* Exit with a status code of 1 (failure) if under 89.5 percent of files are unique
+* Only match blocks of code that have are at least 7 lines large with a minimum of 200 characters
+
+```
+  {
+    "failureThreshold": 89.5,
+    "ignore": ["foo.txt", "bar.txt", "node_modules/**"],
+    "minLines": 7,
+    "minChars": 200
   }
 ```
 

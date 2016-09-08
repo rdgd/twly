@@ -34,10 +34,16 @@ function configure () {
         ignore: []
       };
       if (err) {
-        o.ignore = config.defaults.ignore;
+        o.ignore = config.ignore;
       } else {
-        let ignore = JSON.parse(data).ignore;
-        ignore.forEach(function (p) { o.ignore.push(path.join(process.cwd(), p)); });
+        let userConf = JSON.parse(data);
+        if (userConf.ignore) {
+          let ignore = userConf.ignore;
+          ignore.forEach(function (p) { o.ignore.push(path.join(process.cwd(), p)); });
+        }
+        if (userConf.failureThreshold) { config.failureThreshold = userConf.failureThreshold; }
+        if (userConf.minLines) { config.minLines = userConf.minLines; }
+        if (userConf.minChars) { config.minChars = userConf.minChars; }
       }
       resolve(o);
     });
@@ -82,7 +88,7 @@ function compare (docs) {
     fullDocHashes[hash] = i;
 
     for (let p = 0; p < iP.length; p++) {
-      if (!isGreatEnoughSize(iPOriginal[p])) { continue; }
+      if (!isBigEnough(iPOriginal[p], (config.minLines - 1), config.minChars)) { continue; }
       let pHash = hashString(iP[p]);
       if (pHash in allBlockHashes) {
         let file1 = docs[i].filePath;
@@ -126,9 +132,11 @@ function report (messages) {
     }
   ]);
 
-  console.log(`Towelie score: ${ towelieScore }% `);
-  if (towelieScore < config.FAILURE_THRESHOLD) {
+  if (towelieScore < config.failureThreshold) {
+    console.log(chalk.bgRed(`You failed your threshold of ${config.failureThreshold}% with a score of ${towelieScore}%`));
     process.exitCode = 1;
+  } else {
+    console.log(chalk.bgGreen(`You passed your threshold of ${config.failureThreshold}% with a score of ${towelieScore}%`));
   }
 }
 
@@ -147,8 +155,8 @@ function updateDuplicateMsg (hash, content, msgs) {
   });
 }
 
-function isGreatEnoughSize (p) {
-  return hasMoreNewlinesThan(p, 3, true) && isLongEnough(p);
+function isBigEnough (p, minLines, minChars) {
+  return hasMoreNewlinesThan(p, minLines, true) && p.length > minChars;
 }
 
 function hashString (s) {
@@ -157,11 +165,6 @@ function hashString (s) {
 
 function makeParagraphArray (s) {
   return s.split('\n\n');
-}
-
-function isLongEnough (p) {
-  let minRepeatContentLength = 100;
-  return p.length > minRepeatContentLength;
 }
 
 function hasMoreNewlinesThan (p, n, eq) {

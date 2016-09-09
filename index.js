@@ -114,13 +114,13 @@ function compare (docs) {
     */
     if (hash in fullDocHashes) {
       let existingMsgInd = fullDocHashes[hash].msgInd;
-      if (existingMsgInd) {
+      if (existingMsgInd >= 0) {
         let msg = messages[existingMsgInd];
         (msg.docs.indexOf(docs[i].filePath) === -1) && msg.docs.push(docs[i].filePath);
       } else {
         // Sort of clever: before augmenting the length of the array by pushing to it, I am grabbing the current length for that index
         fullDocHashes[hash].msgInd = messages.length;
-        messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 0, ''));
+        messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 0, '', hash));
       }
       // Increment the relevant counters for reporting
       state.dupedLines += numLines(docs[i].content);

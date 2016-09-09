@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+var cli = require('commander');
 require('console.table');
 var crypto = require('crypto');
 var fs = require('fs');
@@ -19,8 +20,12 @@ function init () {
   // We show towelie picture for fun
   console.log(chalk.green(towelie));
   // We expect the glob argument to ALWAYS be the first argument 
-  let glob = process.argv[2];
-  if(!glob) { glob = '**/*.*'; }
+  cli
+    .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
+    .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
+    .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
+    .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
+    .parse(process.argv);
 
   /*
     This application has 4 different stages: (1) configure (2) read (3) compare the contents
@@ -28,7 +33,7 @@ function init () {
     otherwise we are just piping functions
   */
   configure()
-    .then(function (config) { return read(glob.toString(), config); })
+    .then(function (config) { return read(cli.files.toString(), config); })
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })
     .catch(function (err) { throw err; });
@@ -39,19 +44,30 @@ function configure () {
     // Attempt to read the .trc file, which is the designated name for a twly config file
     fs.readFile(process.cwd() + '/.trc', 'utf-8', function (err, data) {
       let o = { ignore: [] };
+
+      function addIgnoreGlobs (p) { o.ignore.push(path.join(process.cwd(), p)); }
+
       if (err) {
-        o.ignore = config.ignore;
+        o = config;
       } else {
         // The required format of the config file is JSON
         let userConf = JSON.parse(data);
         let ignore = userConf.ignore;
         // If user supplied ignore values, we get their fully qualified paths and add them to ignore array
-        ignore && ignore.forEach(function (p) { o.ignore.push(path.join(process.cwd(), p)); });
-        // Checking for the existence of individual properties and copying over their values if they exist
+        ignore && ignore.forEach(addIgnoreGlobs);
+        /*
+          Checking for the existence of individual properties and copying over their values if they exist
+          Giving preference to values defined via CLI
+        */
         if (userConf.failureThreshold) { config.failureThreshold = userConf.failureThreshold; }
         if (userConf.minLines) { config.minLines = userConf.minLines; }
         if (userConf.minChars) { config.minChars = userConf.minChars; }
       }
+
+      if (cli.threshold) { config.failureThreshold = cli.threshold; }
+      if (cli.lines) { config.minLines = cli.lines; } 
+      if (cli.chars) { config.minChars = cli.chars; }
+
       resolve(o);
     });
   });
@@ -105,7 +121,7 @@ function compare (docs) {
         messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 0, ''));
       }
       // Increment the relevant counters for reporting
-      state.dupedLines += (numLines(docs[i].content) * 2);
+      state.dupedLines += numLines(docs[i].content);
       state.numFileDupes++;
       continue;
     }
@@ -161,7 +177,7 @@ function compare (docs) {
         }
 
         inSameFile && state.numParagraphDupesInFile++;
-        state.dupedLines += (numLines(iPOriginal[p]) * 2);
+        state.dupedLines += numLines(iPOriginal[p]);
         state.numParagraphDupes++;
       } else {
         /*
@@ -199,8 +215,9 @@ function report (messages) {
   console.table([
     {
       "Files Analyzed": state.totalFiles,
-      "Lines Analyzed": state.totalLines,
       "Duplicate Files": state.numFileDupes,
+      "Lines Analyzed": state.totalLines,
+      "Duplicate Lines": state.dupedLines,
       "Duplicate Blocks": state.numParagraphDupes,
       "Duplicate Blocks Within Files": state.numParagraphDupesInFile
     }

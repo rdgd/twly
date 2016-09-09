@@ -145,11 +145,11 @@ function compare (docs) {
             of hashes instead of just a single hash so that we can pick up duplicate content still.
           */
           let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
-
           if (dupeMsgInd === -1) {
             messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
           } else {
             messages[dupeMsgInd].content.push(iPOriginal[p]);
+            messages[dupeMsgInd].hashes.push(pHash);
           }
         } else {
           /*
@@ -164,10 +164,15 @@ function compare (docs) {
         state.dupedLines += (numLines(iPOriginal[p]) * 2);
         state.numParagraphDupes++;
       } else {
+        /*
+          Assigning the value of the pHash in the index object to the document hash because we want to be able to look up the correct index
+          for the doc in the docs array and to get that index we look at the full document hash index object with the document hash as its key
+        */
         allBlockHashes[pHash] = hash;
       }
     }
   }
+
   /*
     We just return a value here instead of resolving a promise, because we are not in a promise and do not
     need one because the above operations are synchronous
@@ -214,7 +219,7 @@ function report (messages) {
 function findDuplicateMsgInd (hash, msgs) {
   let dupeInd = -1;
   for (let i = 0; i < msgs.length; i++) {
-    if (hash === msgs[i].hash) {
+    if (msgs[i].hashes && msgs[i].hashes.indexOf(hash) > -1) {
       dupeInd = i;
       break;
     }
@@ -234,13 +239,6 @@ function getMsgIndByFiles (files, msgs) {
     if (hasAllFiles) { ind = m; break;}
   }
   return ind;
-}
-
-function updateDuplicateMsg (hash, content, msgs) {
-  msgs.map(function (msg) {
-    if (msg.hash === hash) { msg.content.push(content); }
-    return msg;
-  });
 }
 
 function hasMoreNewlinesThan (p, n, eq) {

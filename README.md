@@ -43,5 +43,7 @@ twly reads the config file `.trc`. This file should contain a JSON object. For e
 
 You can use twly by simply running the command `twly`. This will analyze all the files and recurse into subdirectories in your current working directory by default. You can also pass twly a glob pattern... If for example you wanted all javascript files in your current directory and all subdirectories: `twly '**/*.js'`. This will analyze all CSS files in your current working directory `twly '*.css'`.
 
+For a list of available CLI arguments run command `twly --help`.
+
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
 

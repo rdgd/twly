@@ -128,20 +128,29 @@ function compare (docs) {
         if it has simply been added there or also has a message associated with it.
       */
       if (pHash in allBlockHashes) {
+        // Current file of main file loop
         let file1 = docs[i].filePath;
+        // File which had a paragraph that was matched in the allBlockHashes array
         let file2 = docs[fullDocHashes[allBlockHashes[pHash]].ind].filePath;
+        let inSameFile = file1 === file2;
+        var dupeMsgInd = findDuplicateMsgInd(pHash, messages);
+
+        if (inSameFile) {
+          messages.push(new Message([file1], 2, iPOriginal[p], pHash));
+        } else if (dupeMsgInd === -1) { // <--- Dupe message not found
+          messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
+        } else {
+          /*
+            If there was a match for paragraph hashes AND the paragraphs were NOT in the same file AND
+            a message with current paragraph hash WAS FOUND THEN there are multiple files with the same 
+            paragraph in them and we must add the filename to the files array of the pre-existing message
+          */
+          messages[dupeMsgInd].docs.push(file1);
+        }
+
+        inSameFile && state.numParagraphDupesInFile++;
         state.dupedLines += (numLines(iPOriginal[p]) * 2);
         state.numParagraphDupes++;
-        var dupeMsgInd = findDuplicateMsgInd(pHash, messages);
-        if (file1 === file2) {
-          state.numParagraphDupesInFile++;
-          messages.push(new Message([file1], 2, iPOriginal[p], pHash));
-        } else if (dupeMsgInd !== -1) {
-          messages[dupeMsgInd].docs.push(file1);
-          continue;
-        } else {
-          messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
-        }
       } else {
         allBlockHashes[pHash] = hash;
       }

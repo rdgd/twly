@@ -132,10 +132,10 @@ function compare (docs) {
         so check below at match time... a duplicate message will have already been created
       */
       continue;
+    } else {
+      // We don't add to the hashes array above because no need for possible redundancy
+      fullDocHashes[hash] = { ind: i };
     }
-
-    // We don't add to the hashes array above because no need for possible redundancy
-    fullDocHashes[hash] = { ind: i };
 
     // We iterate over iP which is the current document's paragraphs
     for (let p = 0; p < iP.length; p++) {
@@ -202,6 +202,7 @@ function compare (docs) {
 }
 
 function report (messages) {
+  state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
   let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
   /*
     We want the full file duplicates at the bottom so that full aggregiousness is realized,
@@ -269,7 +270,7 @@ function hasMoreNewlinesThan (p, n, eq) {
 }
 
 function numLines (s) {
-  let matches = s.match(/n/g);
+  let matches = s.match(/\n/g);
   return matches ? matches.length : 0; 
 }
 

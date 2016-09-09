@@ -109,20 +109,32 @@ function compare (docs) {
       continue;
     }
 
+    // We don't add to the hashes array above because no need for possible redundancy
     fullDocHashes[hash] = { ind: i };
 
+    // We iterate over iP which is the current document's paragraphs
     for (let p = 0; p < iP.length; p++) {
-      if (!isBigEnough(iPOriginal[p], (config.minLines - 1), config.minChars)) { continue; }
+      /*
+        First we must check if this paragraph is even worth checking, as
+        we have config params which set some criteria for the content size
+      */
+      if (!meetsSizeCriteria(iPOriginal[p], (config.minLines - 1), config.minChars)) { continue; }
+
+      
       let pHash = hashString(iP[p]);
+      // Checking if minified paragraph hash exists in array of all paragraph hashes
       if (pHash in allBlockHashes) {
         let file1 = docs[i].filePath;
         let file2 = docs[fullDocHashes[allBlockHashes[pHash]].ind].filePath;
         state.dupedLines += (numLines(iPOriginal[p]) * 2);
         state.numParagraphDupes++;
+        var dupeMsgInd = findDuplicateMsgInd(pHash, messages);
+        console.log(dupeMsgInd);
         if (file1 === file2) {
           state.numParagraphDupesInFile++;
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));
-        } else if (hasDuplicateMsg(pHash, messages)) {
+        } else if (dupeMsgInd !== -1) {
+          messages[dupeMsgInd].docs.push(file1);
           continue;
         } else {
           messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
@@ -141,14 +153,20 @@ function compare (docs) {
 
 function report (messages) {
   let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
+  /*
+    We want the full file duplicates at the bottom so that full aggregiousness is realized,
+    so we sort the messages array based on message.type which is an int
+  */
   messages.sort(function (a, b) {
     if (a.type > b.type) { return -1; }
     if (a.type < b.type) { return 1; }
     return 0;
   }).forEach(function (msg) {
+    // This is where we print the individual violations "messages"
     console.log(msg.toPlainEnglish());
   });
 
+  // This is a tabular summary of some of the metrics taken throughout the process
   console.table([
     {
       "Files Analyzed": state.totalFiles,
@@ -159,6 +177,7 @@ function report (messages) {
     }
   ]);
 
+  // The end. How did you do?
   if (towelieScore < config.failureThreshold) {
     console.log(chalk.bgRed(`You failed your threshold of ${config.failureThreshold}% with a score of ${towelieScore}%`));
     process.exitCode = 1;
@@ -167,12 +186,17 @@ function report (messages) {
   }
 }
 
-function hasDuplicateMsg (hash, msgs) {
-  let isDupe = false;
-  msgs.forEach(function (msg, ind) {
-    isDupe = hash === msg.hash;
-    if (isDupe) { return isDupe; }
-  });
+// Utility functions used throughout the above code ^^^
+function findDuplicateMsgInd (hash, msgs) {
+  let dupeInd = -1;
+  for (var i = 0; i < msgs.length; i++) {
+    if (hash === msgs[i].hash) {
+      dupeInd = i;
+      break;
+    }
+  }
+
+  return dupeInd;
 }
 
 function updateDuplicateMsg (hash, content, msgs) {
@@ -180,18 +204,6 @@ function updateDuplicateMsg (hash, content, msgs) {
     if (msg.hash === hash) { msg.content.push(content); }
     return msg;
   });
-}
-
-function isBigEnough (p, minLines, minChars) {
-  return hasMoreNewlinesThan(p, minLines, true) && p.length > minChars;
-}
-
-function hashString (s) {
-  return crypto.createHash('md5').update(s).digest('hex');
-}
-
-function makeParagraphArray (s) {
-  return s.split('\n\n');
 }
 
 function hasMoreNewlinesThan (p, n, eq) {
@@ -202,6 +214,18 @@ function hasMoreNewlinesThan (p, n, eq) {
 function numLines (s) {
   let matches = s.match(/n/g);
   return matches ? matches.length : 0; 
+}
+
+function meetsSizeCriteria (p, minLines, minChars) {
+  return hasMoreNewlinesThan(p, minLines, true) && p.length > minChars;
+}
+
+function hashString (s) {
+  return crypto.createHash('md5').update(s).digest('hex');
+}
+
+function makeParagraphArray (s) {
+  return s.split('\n\n');
 }
 
 function normalize (arr) {

@@ -7,6 +7,7 @@ class Message  {
     this.type = type;
     content = content ? content : '';
     this.content = [content];
+    this.hash = hash;
   }
 
   toPlainEnglish () {

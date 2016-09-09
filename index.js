@@ -122,14 +122,17 @@ function compare (docs) {
 
       
       let pHash = hashString(iP[p]);
-      // Checking if minified paragraph hash exists in array of all paragraph hashes
+      /*
+        Checking if minified paragraph hash exists in array of all paragraph hashes. If it doesn't
+        then we just add the hash to the global block/paragraph hash array. If it does then we need to know
+        if it has simply been added there or also has a message associated with it.
+      */
       if (pHash in allBlockHashes) {
         let file1 = docs[i].filePath;
         let file2 = docs[fullDocHashes[allBlockHashes[pHash]].ind].filePath;
         state.dupedLines += (numLines(iPOriginal[p]) * 2);
         state.numParagraphDupes++;
         var dupeMsgInd = findDuplicateMsgInd(pHash, messages);
-        console.log(dupeMsgInd);
         if (file1 === file2) {
           state.numParagraphDupesInFile++;
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));

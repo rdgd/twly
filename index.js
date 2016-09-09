@@ -59,7 +59,7 @@ function configure () {
 
 function read (pathsToRead, config) {
   return new Promise(function (resolve, reject) {
-    var docs = [];
+    let docs = [];
     glob(path.join(process.cwd(), pathsToRead), config, function (err, paths) {
       paths.forEach(function (p, i) {
 
@@ -133,7 +133,7 @@ function compare (docs) {
         // File which had a paragraph that was matched in the allBlockHashes array
         let file2 = docs[fullDocHashes[allBlockHashes[pHash]].ind].filePath;
         let inSameFile = file1 === file2;
-        var dupeMsgInd = findDuplicateMsgInd(pHash, messages);
+        let dupeMsgInd = findDuplicateMsgInd(pHash, messages);
 
         if (inSameFile) {
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));
@@ -201,7 +201,7 @@ function report (messages) {
 // Utility functions used throughout the above code ^^^
 function findDuplicateMsgInd (hash, msgs) {
   let dupeInd = -1;
-  for (var i = 0; i < msgs.length; i++) {
+  for (let i = 0; i < msgs.length; i++) {
     if (hash === msgs[i].hash) {
       dupeInd = i;
       break;

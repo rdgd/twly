@@ -101,7 +101,6 @@ function compare (docs) {
   let messages = [];
   let fullDocHashes = {};
   let allBlockHashes = {};
-  let filesToMsgIndex = {};
 
   for (let i = 0; i < docs.length; i++) {
     let iPOriginal = removeEmpty(makeParagraphArray(docs[i].content));
@@ -116,7 +115,8 @@ function compare (docs) {
     if (hash in fullDocHashes) {
       let existingMsgInd = fullDocHashes[hash].msgInd;
       if (existingMsgInd) {
-        messages[existingMsgInd].docs.push(docs[i].filePath);
+        let msg = messages[existingMsgInd];
+        (msg.docs.indexOf(docs[i].filePath) === -1) && msg.docs.push(docs[i].filePath);
       } else {
         // Sort of clever: before augmenting the length of the array by pushing to it, I am grabbing the current length for that index
         fullDocHashes[hash].msgInd = messages.length;
@@ -125,6 +125,12 @@ function compare (docs) {
       // Increment the relevant counters for reporting
       state.dupedLines += numLines(docs[i].content);
       state.numFileDupes++;
+      /*
+        If we don't continue here, then we will start matching the paragraphs of files which are pure duplicates
+        However, if we do continue, then if a different file shares a fragment with the current file, we will not realize.
+        The solution might be to not continue here, but skip blocks who have hashes that map files which are perfect duplicates,
+        so check below at match time... a duplicate message will have already been created
+      */
       continue;
     }
 
@@ -133,12 +139,8 @@ function compare (docs) {
 
     // We iterate over iP which is the current document's paragraphs
     for (let p = 0; p < iP.length; p++) {
-      /*
-        First we must check if this paragraph is even worth checking, as
-        we have config params which set some criteria for the content size
-      */
+      // First we must check if this paragraph is even worth checking, as we have config params which set some criteria for the content size
       if (!meetsSizeCriteria(iPOriginal[p], (config.minLines - 1), config.minChars)) { continue; }
-
       
       let pHash = hashString(iP[p]);
       /*
@@ -170,12 +172,13 @@ function compare (docs) {
             messages[dupeMsgInd].hashes.push(pHash);
           }
         } else {
+          let msg = messages[dupeMsgInd];
           /*
             If there was a match for paragraph hashes AND the paragraphs were NOT in the same file AND
             a message with current paragraph hash WAS FOUND THEN there are multiple files with the same 
             paragraph in them and we must add the filename to the files array of the pre-existing message
           */
-          messages[dupeMsgInd].docs.push(file1);
+          (msg.docs.indexOf(file1) === -1) && msg.docs.push(file1);
         }
 
         inSameFile && state.numParagraphDupesInFile++;

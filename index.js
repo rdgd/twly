@@ -83,6 +83,7 @@ function compare (docs) {
   let messages = [];
   let fullDocHashes = {};
   let allBlockHashes = {};
+  let filesToMsgIndex = {};
 
   for (let i = 0; i < docs.length; i++) {
     let iPOriginal = removeEmpty(makeParagraphArray(docs[i].content));
@@ -137,8 +138,19 @@ function compare (docs) {
 
         if (inSameFile) {
           messages.push(new Message([file1], 2, iPOriginal[p], pHash));
-        } else if (dupeMsgInd === -1) { // <--- Dupe message not found
-          messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
+        } else if (dupeMsgInd === -1) { // <--- Dupe message NOT found
+          /*
+            Need to figure out if there is a message with the same files for a message we are about to write,
+            and if so, add the content to that message. TODO We also need to be able to add that content's hash to an array
+            of hashes instead of just a single hash so that we can pick up duplicate content still.
+          */
+          let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
+
+          if (dupeMsgInd === -1) {
+            messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
+          } else {
+            messages[dupeMsgInd].content.push(iPOriginal[p]);
+          }
         } else {
           /*
             If there was a match for paragraph hashes AND the paragraphs were NOT in the same file AND
@@ -209,6 +221,19 @@ function findDuplicateMsgInd (hash, msgs) {
   }
 
   return dupeInd;
+}
+
+function getMsgIndByFiles (files, msgs) {
+  let ind = -1;
+  
+  for (let m = 0; m < msgs.length; m++) {
+    let hasAllFiles = false;
+    files.forEach(function (file, f) {
+      hasAllFiles = msgs[m].docs.indexOf(file) > -1;
+    });
+    if (hasAllFiles) { ind = m; break;}
+  }
+  return ind;
 }
 
 function updateDuplicateMsg (hash, content, msgs) {

@@ -14,18 +14,20 @@ var state = require('./state');
 var config = require('./config');
 var towelie = require('./assets/towelie');
 
+cli
+  .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
+  .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
+  .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
+  .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
+  .parse(process.argv);
+  
 init();
 
 function init () {
+  // Length of three indicates that only one arg passed. All of our options require values, so we assume then it was a glob.
+  let glob = process.argv.length === 3 ? process.argv[2] : cli.files;
   // We show towelie picture for fun
   console.log(chalk.green(towelie));
-  // We expect the glob argument to ALWAYS be the first argument 
-  cli
-    .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
-    .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
-    .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
-    .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
-    .parse(process.argv);
 
   /*
     This application has 4 different stages: (1) configure (2) read (3) compare the contents
@@ -33,7 +35,7 @@ function init () {
     otherwise we are just piping functions
   */
   configure()
-    .then(function (config) { return read(cli.files.toString(), config); })
+    .then(function (config) { return read(glob.toString(), config); })
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })
     .catch(function (err) { throw err; });

@@ -24,7 +24,7 @@ twly has some default configuration, which translates into following configurati
 ```
   {
     "failureThreshold": 95,
-    "ignore": ["node_modules/**"],
+    "ignore": ["node_modules/**/*.*", "bower_components/**/*.*", ".git/**/*.*"],
     "minLines": 4,
     "minChars": 100
   }

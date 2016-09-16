@@ -86,7 +86,10 @@ function read (pathsToRead, config) {
           This is signaled by invoking the promise's resolve function and passing it an array of documents. 
         */
         fs.readFile(p, function (err, data) {
-          if (err) { throw err; }
+          if (err) { 
+            console.log(chalk.red(`Error reading file "${p}"`))
+            throw err;
+          }
           state.totalFiles++;
           state.totalLines += numLines(data.toString());
           docs.push({ content: data.toString(), filePath: p, pi: i });

@@ -20,8 +20,8 @@ cli
   .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
   .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
   .parse(process.argv);
-  
-init();
+
+if (require.main === module) { init(); } 
 
 function init () {
   // Length of three indicates that only one arg passed. All of our options require values, so we assume then it was a glob.
@@ -29,13 +29,25 @@ function init () {
   // We show towelie picture for fun
   console.log(chalk.green(towelie));
 
+  main(glob);
+}
+
+function main (conf) {
+  let glb;
+  if (typeof conf === "object") {
+    glb = conf.files;
+    Object.assign(config, conf);
+  } else {
+    glb = conf;
+  }
+
   /*
     This application has 4 different stages: (1) configure (2) read (3) compare the contents
     and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above, 
     otherwise we are just piping functions
   */
   configure()
-    .then(function (config) { return read(glob.toString(), config); })
+    .then(function (config) { return read(glb.toString(), config); })
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })
     .catch(function (err) { throw err; });
@@ -78,6 +90,7 @@ function configure () {
 function read (pathsToRead, config) {
   return new Promise(function (resolve, reject) {
     let docs = [];
+
     glob(path.join(process.cwd(), pathsToRead), config, function (err, paths) {
       paths.forEach(function (p, i) {
 
@@ -300,3 +313,5 @@ function removeEmpty (arr) {
 function minify (s) {
   return s.replace(/(\n|\s)/g, '');
 }
+
+module.exports = main;

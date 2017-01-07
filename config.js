@@ -8,7 +8,9 @@ module.exports = {
     path.join(process.cwd(),'.git/**/*.*')
   ],
   nodir: true,
+  logLevel: 'REPORT',
   failureThreshold: 95,
+  exitOnFailure: true,
   minLines: 4,
   minChars: 100
 };

@@ -13,6 +13,7 @@ var Message = require('./message');
 var state = require('./state');
 var config = require('./config');
 var towelie = require('./assets/towelie');
+const isCli = require.main === module;
 
 cli
   .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
@@ -21,7 +22,7 @@ cli
   .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
   .parse(process.argv);
 
-if (require.main === module) { init(); } 
+isCli && init();
 
 function init () {
   // Length of three indicates that only one arg passed. All of our options require values, so we assume then it was a glob.
@@ -46,7 +47,7 @@ function main (conf) {
     and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above, 
     otherwise we are just piping functions
   */
-  configure()
+  return configure()
     .then(function (config) { return read(glb.toString(), config); })
     .then(function (docs){ return compare(docs); })
     .then(function (messages){ return report(messages); })
@@ -77,6 +78,7 @@ function configure () {
         if (userConf.minLines) { config.minLines = userConf.minLines; }
         if (userConf.minChars) { config.minChars = userConf.minChars; }
       }
+
 
       if (cli.threshold) { config.failureThreshold = cli.threshold; }
       if (cli.lines) { config.minLines = cli.lines; } 
@@ -219,39 +221,39 @@ function compare (docs) {
 
 function report (messages) {
   state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
-  let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
-  /*
-    We want the full file duplicates at the bottom so that full aggregiousness is realized,
-    so we sort the messages array based on message.type which is an int
-  */
-  messages.sort(function (a, b) {
-    if (a.type > b.type) { return -1; }
-    if (a.type < b.type) { return 1; }
-    return 0;
-  }).forEach(function (msg) {
-    // This is where we print the individual violations "messages"
-    console.log(msg.toPlainEnglish());
-  });
-
-  // This is a tabular summary of some of the metrics taken throughout the process
-  console.table([
-    {
+  let reportObj = {
+    towelieScore: (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2),
+    /*
+      We want the full file duplicates at the bottom so that full aggregiousness is realized,
+      so we sort the messages array based on message.type which is an int
+    */
+    messages: messages.sort(function (a, b) {
+      if (a.type > b.type) { return -1; }
+      if (a.type < b.type) { return 1; }
+      return 0;
+    }).map((msg) => msg.toPlainEnglish()),
+    summary: {
       "Files Analyzed": state.totalFiles,
       "Duplicate Files": state.numFileDupes,
       "Lines Analyzed": state.totalLines,
       "Duplicate Lines": state.dupedLines,
       "Duplicate Blocks": state.numParagraphDupes,
       "Duplicate Blocks Within Files": state.numParagraphDupesInFile
+    },
+    log: function () {
+      this.messages.forEach((m) => console.log(m));
+      console.table([this.summary]);
+      if (this.towelieScore < config.failureThreshold) {
+        console.log(chalk.bgRed(`You failed your threshold of ${config.failureThreshold}% with a score of ${this.towelieScore}%`));
+        if (config.exitOnFailure) { process.exitCode = 1; }
+      } else {
+        console.log(chalk.bgGreen(`You passed your threshold of ${config.failureThreshold}% with a score of ${this.towelieScore}%`));
+      }
     }
-  ]);
+  };
 
-  // The end. How did you do?
-  if (towelieScore < config.failureThreshold) {
-    console.log(chalk.bgRed(`You failed your threshold of ${config.failureThreshold}% with a score of ${towelieScore}%`));
-    process.exitCode = 1;
-  } else {
-    console.log(chalk.bgGreen(`You passed your threshold of ${config.failureThreshold}% with a score of ${towelieScore}%`));
-  }
+  if ((isCli && config.logLevel === 'REPORT') || config.logLevel === 'REPORT') { reportObj.log(); }
+  return reportObj;
 }
 
 // Utility functions used throughout the above code ^^^

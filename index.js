@@ -240,6 +240,7 @@ function report (messages) {
       "Duplicate Blocks": state.numParagraphDupes,
       "Duplicate Blocks Within Files": state.numParagraphDupesInFile
     },
+    pass: this.towelieScore >= config.failureThreshold,
     log: function () {
       this.messages.forEach((m) => console.log(m));
       console.table([this.summary]);

@@ -221,8 +221,9 @@ function compare (docs) {
 
 function report (messages) {
   state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
+  let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
   let reportObj = {
-    towelieScore: (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2),
+    towelieScore: towelieScore,
     /*
       We want the full file duplicates at the bottom so that full aggregiousness is realized,
       so we sort the messages array based on message.type which is an int
@@ -240,7 +241,7 @@ function report (messages) {
       "Duplicate Blocks": state.numParagraphDupes,
       "Duplicate Blocks Within Files": state.numParagraphDupesInFile
     },
-    pass: this.towelieScore >= config.failureThreshold,
+    pass: towelieScore >= config.failureThreshold,
     log: function () {
       this.messages.forEach((m) => console.log(m));
       console.table([this.summary]);

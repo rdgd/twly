@@ -36,6 +36,7 @@ function initCli () {
 
 function main (conf) {
   let glb;
+  // When using TWLY programatically, a config object will be passed. Otherwise, the argument will be a file path or glob.
   if (typeof conf === "object") {
     glb = conf.files;
     Object.assign(config, conf);
@@ -46,7 +47,7 @@ function main (conf) {
   /*
     This application has 4 different stages: (1) configure (2) read (3) compare the contents
     and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above, 
-    otherwise we are just piping functions
+    otherwise we are just piping functions.
   */
   return configure()
     .then(function (config) { return read(glb.toString(), config); })
@@ -80,7 +81,7 @@ function configure () {
         if (userConf.minChars) { config.minChars = userConf.minChars; }
       }
 
-
+      // CLI arguments take precedence over config file, since they are "closer" to runtime
       if (cli.threshold) { config.failureThreshold = cli.threshold; }
       if (cli.lines) { config.minLines = cli.lines; } 
       if (cli.chars) { config.minChars = cli.chars; }
@@ -213,10 +214,6 @@ function compare (docs) {
     }
   }
 
-  /*
-    We just return a value here instead of resolving a promise, because we are not in a promise and do not
-    need one because the above operations are synchronous
-  */
   return messages;
 }
 

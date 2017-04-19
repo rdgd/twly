@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 'use strict';
 
-var cli = require('commander');
+const cli = require('commander');
+const crypto = require('crypto');
+const fs = require('fs');
+const chalk = require('chalk');
+const glob = require('glob');
+const path = require('path');
 require('console.table');
-var crypto = require('crypto');
-var fs = require('fs');
-var chalk = require('chalk');
-var glob = require('glob');
-var path = require('path');
 
-var Message = require('./message');
-var state = require('./state');
-var config = require('./config');
-var towelie = require('./assets/towelie');
+const Message = require('./message');
+const state = require('./state');
+const config = require('./config');
+const towelie = require('./assets/towelie');
 const isCli = require.main === module;
 
 cli
@@ -20,15 +20,16 @@ cli
   .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
   .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
   .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
+  .option('-b, --boring', 'Don\'t show TWLY picture on run') 
   .parse(process.argv);
 
-isCli && init();
+isCli && initCli();
 
-function init () {
+function initCli () {
   // Length of three indicates that only one arg passed. All of our options require values, so we assume then it was a glob.
   let glob = process.argv.length === 3 ? process.argv[2] : cli.files;
   // We show towelie picture for fun
-  console.log(chalk.green(towelie));
+  !cli.boring && console.log(chalk.green(towelie));
 
   main(glob);
 }

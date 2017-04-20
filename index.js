@@ -7,6 +7,7 @@ const fs = require('fs');
 const chalk = require('chalk');
 const glob = require('glob');
 const path = require('path');
+const binaries = require('binary-extensions');
 require('console.table');
 
 const Message = require('./message');
@@ -157,6 +158,9 @@ function compare (docs) {
       fullDocHashes[hash] = { ind: i };
     }
 
+    // If the file being examined is not a text file, we don't want to evaluate its contents, only it's full signature which we have done above
+    if (!isTextFile(docs[i].filePath)) { continue; }
+        
     // We iterate over iP which is the current document's paragraphs
     for (let p = 0; p < iP.length; p++) {
       // First we must check if this paragraph is even worth checking, as we have config params which set some criteria for the content size
@@ -314,6 +318,10 @@ function removeEmpty (arr) {
 
 function minify (s) {
   return s.replace(/(\n|\s)/g, '');
+}
+
+function isTextFile (filePath) {
+   return !binaries.includes(filePath.split('.').pop());
 }
 
 module.exports = main;

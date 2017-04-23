@@ -39,10 +39,10 @@ function main (conf) {
   let glb;
   // When using TWLY programatically, a config object will be passed. Otherwise, the argument will be a file path or glob.
   if (typeof conf === "object") {
-    glb = conf.files;
+    glb = conf.files; // If files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
     Object.assign(config, conf);
   } else {
-    glb = conf;
+    glb = conf; // In this case the variable name conf is misleading, it's actually assumed that the value is a glob since it's not an object.
   }
 
   /*
@@ -51,16 +51,16 @@ function main (conf) {
     otherwise we are just piping functions.
   */
   return configure()
-    .then(function (config) { return read(glb.toString(), config); })
-    .then(function (docs){ return compare(docs); })
-    .then(function (messages){ return report(messages); })
-    .catch(function (err) { throw err; });
+    .then(config => read(glb.toString(), config))
+    .then(docs => compare(docs))
+    .then(messages => report(messages))
+    .catch((err) => { throw err; });
 }
 
 function configure () {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     // Attempt to read the .trc file, which is the designated name for a twly config file
-    fs.readFile(process.cwd() + '/.trc', 'utf-8', function (err, data) {
+    fs.readFile(process.cwd() + '/.trc', 'utf-8', (err, data) => {
       let o = { ignore: [] };
 
       function addIgnoreGlobs (p) { o.ignore.push(path.join(process.cwd(), p)); }
@@ -93,17 +93,17 @@ function configure () {
 }
 
 function read (pathsToRead, config) {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     let docs = [];
 
-    glob(path.join(process.cwd(), pathsToRead), config, function (err, paths) {
-      paths.forEach(function (p, i) {
+    glob(path.join(process.cwd(), pathsToRead), config, (err, paths) => {
+      paths.forEach((p, i) => {
 
         /*
           Reading in all documents and only firing off the comparison once all have been read.
           This is signaled by invoking the promise's resolve function and passing it an array of documents. 
         */
-        fs.readFile(p, function (err, data) {
+        fs.readFile(p, (err, data) => {
           if (err) { 
             console.log(chalk.red(`Error reading file "${p}"`))
             throw err;
@@ -230,7 +230,7 @@ function report (messages) {
       We want the full file duplicates at the bottom so that full aggregiousness is realized,
       so we sort the messages array based on message.type which is an int
     */
-    messages: messages.sort(function (a, b) {
+    messages: messages.sort((a, b) => {
       if (a.type > b.type) { return -1; }
       if (a.type < b.type) { return 1; }
       return 0;

@@ -21,7 +21,7 @@ cli
   .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
   .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
   .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
-  .option('-b, --boring', 'Don\'t show TWLY picture on run') 
+  .option('-b, --boring', 'Don\'t show TWLY picture on run')
   .parse(process.argv);
 
 isCli && initCli();
@@ -47,7 +47,7 @@ function main (conf) {
 
   /*
     This application has 4 different stages: (1) configure (2) read (3) compare the contents
-    and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above, 
+    and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above,
     otherwise we are just piping functions.
   */
   return configure()
@@ -84,7 +84,7 @@ function configure () {
 
       // CLI arguments take precedence over config file, since they are "closer" to runtime
       if (cli.threshold) { config.failureThreshold = cli.threshold; }
-      if (cli.lines) { config.minLines = cli.lines; } 
+      if (cli.lines) { config.minLines = cli.lines; }
       if (cli.chars) { config.minChars = cli.chars; }
 
       resolve(o);
@@ -101,16 +101,17 @@ function read (pathsToRead, config) {
 
         /*
           Reading in all documents and only firing off the comparison once all have been read.
-          This is signaled by invoking the promise's resolve function and passing it an array of documents. 
+          This is signaled by invoking the promise's resolve function and passing it an array of documents.
         */
         fs.readFile(p, (err, data) => {
-          if (err) { 
+          if (err) {
             console.log(chalk.red(`Error reading file "${p}"`))
             throw err;
           }
+          let txt = data.toString();
           state.totalFiles++;
-          state.totalLines += numLines(data.toString());
-          docs.push({ content: data.toString(), filePath: p, pi: i });
+          state.totalLines += numLines(txt);
+          docs.push({ content: txt, filePath: p, pi: i }); // Why leave pi hanging around? Doesn't seem to be used.
           if (docs.length === paths.length) { resolve(docs); }
         });
       });
@@ -118,19 +119,20 @@ function read (pathsToRead, config) {
   });
 }
 
+// Break this into smaller functions... it's a bit unwieldy.
 function compare (docs) {
   let messages = [];
   let fullDocHashes = {};
   let allBlockHashes = {};
 
   for (let i = 0; i < docs.length; i++) {
-    let iPOriginal = removeEmpty(makeParagraphArray(docs[i].content));
-    let iP = normalize(iPOriginal);
+    let paragraphs = removeEmpty(makeParagraphArray(docs[i].content));
+    let minifiedParagraphs = normalize(paragraphs);
     let hash = hashString(minify(docs[i].content));
 
     /*
       We check if the hash of ALL of the minified content in current document already exists in our array of hashes
-      If it does, that means we have a duplicate of an entire document, so we check to see if there is a message with 
+      If it does, that means we have a duplicate of an entire document, so we check to see if there is a message with
       that hash as a reference, and if there is then we add the docpath to the message... otherwise just add message
     */
     if (hash in fullDocHashes) {
@@ -139,7 +141,7 @@ function compare (docs) {
         let msg = messages[existingMsgInd];
         (msg.docs.indexOf(docs[i].filePath) === -1) && msg.docs.push(docs[i].filePath);
       } else {
-        // Sort of clever: before augmenting the length of the array by pushing to it, I am grabbing the current length for that index
+        // Before augmenting the length of the array by pushing to it, I am grabbing the current length for that index
         fullDocHashes[hash].msgInd = messages.length;
         messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 0, '', hash));
       }
@@ -160,13 +162,13 @@ function compare (docs) {
 
     // If the file being examined is not a text file, we don't want to evaluate its contents, only it's full signature which we have done above
     if (!isTextFile(docs[i].filePath)) { continue; }
-        
-    // We iterate over iP which is the current document's paragraphs
-    for (let p = 0; p < iP.length; p++) {
+
+    // We iterate over the current document's minified paragraphs
+    for (let p = 0; p < minifiedParagraphs.length; p++) {
       // First we must check if this paragraph is even worth checking, as we have config params which set some criteria for the content size
-      if (!meetsSizeCriteria(iPOriginal[p], (config.minLines - 1), config.minChars)) { continue; }
-      
-      let pHash = hashString(iP[p]);
+      if (!meetsSizeCriteria(paragraphs[p], (config.minLines - 1), config.minChars)) { continue; }
+
+      let pHash = hashString(minifiedParagraphs[p]);
       /*
         Checking if minified paragraph hash exists in array of all paragraph hashes. If it doesn't
         then we just add the hash to the global block/paragraph hash array. If it does then we need to know
@@ -181,7 +183,7 @@ function compare (docs) {
         let dupeMsgInd = findDuplicateMsgInd(pHash, messages);
 
         if (inSameFile) {
-          messages.push(new Message([file1], 2, iPOriginal[p], pHash));
+          messages.push(new Message([file1], 2, paragraphs[p], pHash));
         } else if (dupeMsgInd === -1) { // <--- Dupe message NOT found
           /*
             Need to figure out if there is a message with the same files for a message we are about to write,
@@ -190,23 +192,23 @@ function compare (docs) {
           */
           let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
           if (dupeMsgInd === -1) {
-            messages.push(new Message([file1, file2], 1, iPOriginal[p], pHash));
+            messages.push(new Message([file1, file2], 1, paragraphs[p], pHash));
           } else {
-            messages[dupeMsgInd].content.push(iPOriginal[p]);
+            messages[dupeMsgInd].content.push(paragraphs[p]);
             messages[dupeMsgInd].hashes.push(pHash);
           }
         } else {
           let msg = messages[dupeMsgInd];
           /*
             If there was a match for paragraph hashes AND the paragraphs were NOT in the same file AND
-            a message with current paragraph hash WAS FOUND THEN there are multiple files with the same 
+            a message with current paragraph hash WAS FOUND THEN there are multiple files with the same
             paragraph in them and we must add the filename to the files array of the pre-existing message
           */
           (msg.docs.indexOf(file1) === -1) && msg.docs.push(file1);
         }
 
         inSameFile && state.numParagraphDupesInFile++;
-        state.dupedLines += numLines(iPOriginal[p]);
+        state.dupedLines += numLines(paragraphs[p]);
         state.numParagraphDupes++;
       } else {
         /*
@@ -275,7 +277,7 @@ function findDuplicateMsgInd (hash, msgs) {
 
 function getMsgIndByFiles (files, msgs) {
   let ind = -1;
-  
+
   for (let m = 0; m < msgs.length; m++) {
     let hasAllFiles = false;
     files.forEach(function (file, f) {
@@ -293,7 +295,7 @@ function hasMoreNewlinesThan (p, n, eq) {
 
 function numLines (s) {
   let matches = s.match(/\n/g);
-  return matches ? matches.length : 0; 
+  return matches ? matches.length : 0;
 }
 
 function meetsSizeCriteria (p, minLines, minChars) {

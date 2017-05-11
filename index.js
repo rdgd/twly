@@ -8,9 +8,9 @@ const chalk = require('chalk');
 const glob = require('glob');
 const path = require('path');
 const binaries = require('binary-extensions');
-require('console.table');
 
 const Message = require('./message');
+const Report = require('./report.js');
 const state = require('./state');
 const config = require('./config');
 const towelie = require('./assets/towelie');
@@ -63,7 +63,7 @@ function configure () {
     fs.readFile(process.cwd() + '/.trc', 'utf-8', (err, data) => {
       let o = { ignore: [] };
 
-      function addIgnoreGlobs (p) { o.ignore.push(path.join(process.cwd(), p)); }
+      function addIgnoreGlobs (p) { o.ignore.push(path.join(process.cwd(), p)); } // I don't like the side affects here, do something better.
 
       if (err) {
         o = config;
@@ -224,42 +224,12 @@ function compare (docs) {
 }
 
 function report (messages) {
-  state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
-  let towelieScore = (100 - ((state.dupedLines / state.totalLines) *  100)).toFixed(2);
-  let reportObj = {
-    towelieScore: towelieScore,
-    /*
-      We want the full file duplicates at the bottom so that full aggregiousness is realized,
-      so we sort the messages array based on message.type which is an int
-    */
-    messages: messages.sort((a, b) => {
-      if (a.type > b.type) { return -1; }
-      if (a.type < b.type) { return 1; }
-      return 0;
-    }).map((msg) => msg.toPlainEnglish()),
-    summary: {
-      "Files Analyzed": state.totalFiles,
-      "Duplicate Files": state.numFileDupes,
-      "Lines Analyzed": state.totalLines,
-      "Duplicate Lines": state.dupedLines,
-      "Duplicate Blocks": state.numParagraphDupes,
-      "Duplicate Blocks Within Files": state.numParagraphDupesInFile
-    },
-    pass: towelieScore >= config.failureThreshold,
-    log: function () {
-      this.messages.forEach((m) => console.log(m));
-      console.table([this.summary]);
-      if (this.towelieScore < config.failureThreshold) {
-        console.log(chalk.bgRed(`You failed your threshold of ${config.failureThreshold}% with a score of ${this.towelieScore}%`));
-        if (config.exitOnFailure) { process.exitCode = 1; }
-      } else {
-        console.log(chalk.bgGreen(`You passed your threshold of ${config.failureThreshold}% with a score of ${this.towelieScore}%`));
-      }
-    }
-  };
+  state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1); // da fuq?
+  let r = new Report(state, messages, config.failureThreshold);
 
-  if ((isCli && config.logLevel === 'REPORT') || config.logLevel === 'REPORT') { reportObj.log(); }
-  return reportObj;
+  // Why this funky condition?
+  if ((isCli && config.logLevel === 'REPORT') || config.logLevel === 'REPORT') { r.log(config.exitOnFailure); }
+  return r;
 }
 
 // Utility functions used throughout the above code ^^^

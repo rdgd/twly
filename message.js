@@ -2,10 +2,9 @@
 var chalk = require('chalk');
 
 class Message  {
-  constructor (docs, type, content, hashes) {
+  constructor (docs, type, content = '', hashes) {
     this.docs = docs;
     this.type = type;
-    content = content ? content : '';
     this.content = [content];
     this.hashes = [hashes];
   }

@@ -289,7 +289,7 @@ function removeEmpty (arr) {
 }
 
 function minify (s) {
-  return s.replace(/(\n|\s)/g, '');
+  return s.replace(/(\n|\s|\t)/g, '');
 }
 
 function isTextFile (filePath) {

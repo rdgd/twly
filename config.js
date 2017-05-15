@@ -1,16 +1,15 @@
-'use strict';
-var path = require('path');
+const fs = require('fs');
+const defaults = require('./defaults');
 
-module.exports = {
-  ignore: [
-    path.join(process.cwd(),'node_modules/**/*.*'),
-    path.join(process.cwd(),'bower_components/**/*.*'),
-    path.join(process.cwd(),'.git/**/*.*')
-  ],
-  nodir: true,
-  logLevel: 'REPORT',
-  failureThreshold: 95,
-  exitOnFailure: true,
-  minLines: 4,
-  minChars: 100
-};
+function configure (runtimeConf) {
+  // Attempt to read the .trc file, which is the designated name for a twly config file
+  let trc;
+  try { trc = JSON.parse(fs.readFileSync(process.cwd() + '/.trc', 'utf-8')); }
+  catch (err) { trc = {}; }
+
+  if (trc.ignore) { trc.ignore = trc.ignore.map(p => path.join(process.cwd(), p)); } 
+
+  return Object.assign({}, defaults, trc, runtimeConf);
+}
+
+module.exports = configure;

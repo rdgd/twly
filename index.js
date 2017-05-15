@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 
-const cli = require('commander');
 const crypto = require('crypto');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -12,9 +11,10 @@ const binaries = require('binary-extensions');
 const Message = require('./message');
 const Report = require('./report.js');
 const state = require('./state');
-const config = require('./config');
-const towelie = require('./assets/towelie');
+const defaults = require('./defaults');
 const isCli = require.main === module;
+const cli = isCli ? require('commander') : null;
+var config = {};
 
 cli
   .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
@@ -27,69 +27,27 @@ cli
 isCli && initCli();
 
 function initCli () {
-  // Length of three indicates that only one arg passed. All of our options require values, so we assume then it was a glob.
+  // Length of three indicates only one arg passed, which we assume is a glob
   let glob = process.argv.length === 3 ? process.argv[2] : cli.files;
-  // We show towelie picture for fun
-  !cli.boring && console.log(chalk.green(towelie));
+  let runtimeConf = { files: glob };
 
-  main(glob);
+  if (!cli.boring) { console.log(chalk.green(require('./assets/towelie'))); }
+  // CLI arguments take precedence over config file, since they are "closer" to runtime
+  if (cli.threshold) { runtimeConf.threshold = cli.threshold; }
+  if (cli.lines) { runtimeConf.minLines = cli.lines; }
+  if (cli.chars) { runtimeConf.minChars = cli.chars; }
+
+  main(runtimeConf);
 }
 
-function main (conf) {
-  let glb;
-  // When using TWLY programatically, a config object will be passed. Otherwise, the argument will be a file path or glob.
-  if (typeof conf === "object") {
-    glb = conf.files; // If files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
-    Object.assign(config, conf);
-  } else {
-    glb = conf; // In this case the variable name conf is misleading, it's actually assumed that the value is a glob since it's not an object.
-  }
-
-  /*
-    This application has 4 different stages: (1) configure (2) read (3) compare the contents
-    and (4) report towlie's findings. In stage 2, read, we pass in the global variable "config", required above,
-    otherwise we are just piping functions.
-  */
-  return configure()
-    .then(config => read(glb.toString(), config))
+// TODO: If config.files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
+function main (runtimeConf = {}) {
+  // This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings. 
+  config = (require('./config'))(runtimeConf);
+  return read(config.files, config)
     .then(docs => compare(docs))
     .then(messages => report(messages))
     .catch((err) => { throw err; });
-}
-
-function configure () {
-  return new Promise((resolve, reject) => {
-    // Attempt to read the .trc file, which is the designated name for a twly config file
-    fs.readFile(process.cwd() + '/.trc', 'utf-8', (err, data) => {
-      let o = { ignore: [] };
-
-      function addIgnoreGlobs (p) { o.ignore.push(path.join(process.cwd(), p)); } // I don't like the side affects here, do something better.
-
-      if (err) {
-        o = config;
-      } else {
-        // The required format of the config file is JSON
-        let userConf = JSON.parse(data);
-        let ignore = userConf.ignore;
-        // If user supplied ignore values, we get their fully qualified paths and add them to ignore array
-        ignore && ignore.forEach(addIgnoreGlobs);
-        /*
-          Checking for the existence of individual properties and copying over their values if they exist
-          Giving preference to values defined via CLI
-        */
-        if (userConf.failureThreshold) { config.failureThreshold = userConf.failureThreshold; }
-        if (userConf.minLines) { config.minLines = userConf.minLines; }
-        if (userConf.minChars) { config.minChars = userConf.minChars; }
-      }
-
-      // CLI arguments take precedence over config file, since they are "closer" to runtime
-      if (cli.threshold) { config.failureThreshold = cli.threshold; }
-      if (cli.lines) { config.minLines = cli.lines; }
-      if (cli.chars) { config.minChars = cli.chars; }
-
-      resolve(o);
-    });
-  });
 }
 
 function read (pathsToRead, config) {
@@ -98,20 +56,13 @@ function read (pathsToRead, config) {
 
     glob(path.join(process.cwd(), pathsToRead), config, (err, paths) => {
       paths.forEach((p, i) => {
-
-        /*
-          Reading in all documents and only firing off the comparison once all have been read.
-          This is signaled by invoking the promise's resolve function and passing it an array of documents.
-        */
         fs.readFile(p, (err, data) => {
-          if (err) {
-            console.log(chalk.red(`Error reading file "${p}"`))
-            throw err;
-          }
+          if (err) { console.log(chalk.red(`Error reading file "${p}"`)); throw err; }
+
           let txt = data.toString();
           state.totalFiles++;
           state.totalLines += numLines(txt);
-          docs.push({ content: txt, filePath: p, pi: i }); // Why leave pi hanging around? Doesn't seem to be used.
+          docs.push({ content: txt, filePath: p });
           if (docs.length === paths.length) { resolve(docs); }
         });
       });
@@ -126,8 +77,8 @@ function compare (docs) {
   let allBlockHashes = {};
 
   for (let i = 0; i < docs.length; i++) {
-    let paragraphs = removeEmpty(makeParagraphArray(docs[i].content));
-    let minifiedParagraphs = normalize(paragraphs);
+    let paragraphs = makeParagraphArray(docs[i].content);
+    let minifiedParagraphs = minifyParagraphs(paragraphs);
     let hash = hashString(minify(docs[i].content));
 
     /*
@@ -143,7 +94,7 @@ function compare (docs) {
       } else {
         // Before augmenting the length of the array by pushing to it, I am grabbing the current length for that index
         fullDocHashes[hash].msgInd = messages.length;
-        messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 0, '', hash));
+        messages.push(new Message([docs[i].filePath, docs[fullDocHashes[hash].ind].filePath], 'identical file', '', hash));
       }
       // Increment the relevant counters for reporting
       state.dupedLines += numLines(docs[i].content);
@@ -183,7 +134,7 @@ function compare (docs) {
         let dupeMsgInd = findDuplicateMsgInd(pHash, messages);
 
         if (inSameFile) {
-          messages.push(new Message([file1], 2, paragraphs[p], pHash));
+          messages.push(new Message([file1], 'intra-file duplicate', paragraphs[p], pHash));
         } else if (dupeMsgInd === -1) { // <--- Dupe message NOT found
           /*
             Need to figure out if there is a message with the same files for a message we are about to write,
@@ -192,7 +143,7 @@ function compare (docs) {
           */
           let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
           if (dupeMsgInd === -1) {
-            messages.push(new Message([file1, file2], 1, paragraphs[p], pHash));
+            messages.push(new Message([file1, file2], 'inter-file duplicate', paragraphs[p], pHash));
           } else {
             messages[dupeMsgInd].content.push(paragraphs[p]);
             messages[dupeMsgInd].hashes.push(pHash);
@@ -220,15 +171,17 @@ function compare (docs) {
     }
   }
 
+  console.log(fullDocHashes);
+  console.log(messages);
+  console.log(allBlockHashes);
   return messages;
 }
 
 function report (messages) {
-  state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1); // da fuq?
+  state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
   let r = new Report(state, messages, config.failureThreshold);
 
-  // Why this funky condition?
-  if ((isCli && config.logLevel === 'REPORT') || config.logLevel === 'REPORT') { r.log(config.exitOnFailure); }
+  config.logLevel === 'REPORT' && r.log(config.exitOnFailure);
   return r;
 }
 
@@ -277,11 +230,11 @@ function hashString (s) {
 }
 
 function makeParagraphArray (s) {
-  return s.split('\n\n');
+  return removeEmpty(s.split('\n\n'));
 }
 
-function normalize (arr) {
-  return removeEmpty(arr).map(function (s) { return s.replace(/\s/g, ''); });
+function minifyParagraphs (arr) {
+  return removeEmpty(arr).map(minify);
 }
 
 function removeEmpty (arr) {

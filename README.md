@@ -23,7 +23,7 @@ twly has some default configuration, which translates into following configurati
 
 ```
   {
-    "failureThreshold": 95,
+    "threshold": 95,
     "ignore": ["node_modules/**/*.*", "bower_components/**/*.*", ".git/**/*.*"],
     "minLines": 4,
     "minChars": 100
@@ -37,7 +37,7 @@ twly reads the config file `.trc`. This file should contain a JSON object. For e
 
 ```
   {
-    "failureThreshold": 89.5,
+    "threshold": 89.5,
     "ignore": ["foo.txt", "bar.txt", "node_modules/**"],
     "minLines": 7,
     "minChars": 200

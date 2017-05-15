@@ -6,6 +6,9 @@
   "bin": {
     "twly": "index.js"
   },
+  "scripts": {
+    "tester": "node --debug=5858 index.js '**/*.css'"
+  },
   "keywords": [
     "lint",
     "linter",

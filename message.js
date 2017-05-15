@@ -1,5 +1,11 @@
 'use strict';
 var chalk = require('chalk');
+let wtf = chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F'));
+const typeMessages = new Map([
+  ['identical file', `are ${chalk.red('IDENTICAL')} ${wtf} !!! \n`],
+  ['inter-file duplicate', 'repeat the following: \n'],
+  ['intra-file duplicate', 'repeats the following within the file: \n']    
+]);
 
 class Message  {
   constructor (docs, type, content = '', hashes) {
@@ -7,12 +13,6 @@ class Message  {
     this.type = type;
     this.content = [content];
     this.hashes = [hashes];
-    let wtf = chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F'));
-    this.typeMessages = new Map([
-      ['identical file', `are ${chalk.red('IDENTICAL')} ${wtf} !!! \n`],
-      ['inter-file duplicate', 'repeat the following: \n'],
-      ['intra-file duplicate', 'repeats the following within the file: \n']    
-    ]);
   }
 
   toPlainEnglish () {
@@ -32,7 +32,7 @@ class Message  {
       });
     }
 
-    msg += this.typeMessages.get(this.type)
+    msg += typeMessages.get(this.type);
 
     return msg;
   }

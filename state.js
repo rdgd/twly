@@ -3,6 +3,6 @@ module.exports = {
   dupedLines: 0,
   totalFiles: 0,
   numFileDupes: 0,
-  numParagraphDupes: 0,
-  numParagraphDupesInFile: 0
+  numBlockDupes: 0,
+  numBlockDupesInFile: 0
 };

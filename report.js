@@ -24,8 +24,8 @@ class Report {
       "Duplicate Files": state.numFileDupes,
       "Lines Analyzed": state.totalLines,
       "Duplicate Lines": state.dupedLines,
-      "Duplicate Blocks": state.numParagraphDupes,
-      "Duplicate Blocks Within Files": state.numParagraphDupesInFile
+      "Duplicate Blocks": state.numBlockDupes,
+      "Duplicate Blocks Within Files": state.numBlockDupesInFile
     };
   }
 

@@ -8,11 +8,11 @@ const typeMessages = new Map([
 ]);
 
 class Message  {
-  constructor (docs, type, content = '', hashes) {
+  constructor (docs, type, hashes, content = '') {
     this.docs = docs;
     this.type = type;
-    this.content = [content];
     this.hashes = [hashes];
+    this.content = [content];
   }
 
   toPlainEnglish () {
@@ -38,9 +38,9 @@ class Message  {
   }
 
   _makeMessageContent () {
-    let msg = '';
-    this.content.forEach((content, ind) => msg += `${ind + 1}.)\n\t ${chalk.red(content)} \n`);
-    return msg;
+    return this.content.map((content, ind) => {
+      if (content) { return `${ind + 1}.)\n\t ${chalk.red(content)} \n`; }
+    }).join('');
   }
 }
 

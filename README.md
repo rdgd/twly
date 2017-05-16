@@ -52,3 +52,9 @@ For a list of available CLI arguments run command `twly --help`.
 
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
 
+# Contributing
+## Key Data Structures
+`allBlockHashes` is an object with `blockHash` as key and the value is the index with which the parent document can be looked up in the `docs` array.
+
+
+

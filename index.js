@@ -55,14 +55,14 @@ function read (pathsToRead, config) {
     let docs = [];
 
     glob(path.join(process.cwd(), pathsToRead), config, (err, paths) => {
-      paths.forEach((p, i) => {
-        fs.readFile(p, (err, data) => {
-          if (err) { console.log(chalk.red(`Error reading file "${p}"`)); throw err; }
+      paths.forEach((filePath, i) => {
+        fs.readFile(filePath, (err, data) => {
+          if (err) { console.log(chalk.red(`Error reading file "${filePath}"`)); throw err; }
 
-          let txt = data.toString();
+          let content = data.toString();
           state.totalFiles++;
-          state.totalLines += numLines(txt);
-          docs.push({ content: txt, filePath: p });
+          state.totalLines += numLines(content);
+          docs.push({ content, filePath });
           if (docs.length === paths.length) { resolve(docs); }
         });
       });
@@ -73,14 +73,14 @@ function read (pathsToRead, config) {
 // Break this into smaller functions... it's a bit unwieldy.
 function compare (docs) {
   let messages = [];
-  let fullDocHashes = {};
-  let allBlockHashes = {};
+  let fullDocHashes = new Map();
+  let allBlockHashes = new Map(); 
 
   for (let i = 0; i < docs.length; i++) {
     let blocks = makeBlockArray(docs[i].content);
     let minifiedBlocks = minifyBlocks(blocks);
     let docHash = hashString(minify(docs[i].content));
-    let fullDocumentMatch = docHash in fullDocHashes;
+    let fullDocumentMatch = fullDocHashes.has(docHash);
 
     /*
       We check if the hash of ALL of the minified content in current document already exists in our array of hashes
@@ -88,17 +88,17 @@ function compare (docs) {
       that hash as a reference, and if there is then we add the docpath to the message... otherwise just add message
     */
     if (!fullDocumentMatch) {
-      fullDocHashes[docHash] = { docInd: i };
+      fullDocHashes.set(docHash, { docInd: i });
     } else {
-      let existingMsgInd = fullDocHashes[docHash].msgInd;
+      let existingMsgInd = fullDocHashes.get(docHash).msgInd;
       let previouslyMatched = existingMsgInd > -1;
       if (previouslyMatched) {
         let msg = messages[existingMsgInd];
         (msg.docs.indexOf(docs[i].filePath) === -1) && msg.docs.push(docs[i].filePath);
       } else {
         // msgInd is a way to point to a "message" related to a hash, which is faster than iterating over all messages looking for a hash
-        fullDocHashes[docHash].msgInd = messages.length;
-        messages.push(new Message([docs[i].filePath, docs[fullDocHashes[docHash].docInd].filePath], 'identical file', docHash));
+        fullDocHashes.get(docHash).msgInd = messages.length;
+        messages.push(new Message([docs[i].filePath, docs[fullDocHashes.get(docHash).docInd].filePath], 'identical file', docHash));
       }
       // Increment the relevant counters for reporting
       state.dupedLines += numLines(docs[i].content);
@@ -121,7 +121,7 @@ function compare (docs) {
       if (!meetsSizeCriteria(blocks[b], (config.minLines - 1), config.minChars)) { continue; }
       let block = blocks[b];
       let blockHash = hashString(minifiedBlocks[b]);
-      let blockMatch = blockHash in allBlockHashes;
+      let blockMatch = allBlockHashes.has(blockHash);
       /*
         Checking if minified block hash exists in array of all block hashes. If it doesn't
         then we just add the hash to the global block/block hash array. If it does then we need to know
@@ -133,11 +133,11 @@ function compare (docs) {
           for the doc in the docs array and to get that index we look at the full document hash index 
           object with the document hash as its key
         */
-        allBlockHashes[blockHash] = fullDocHashes[docHash].docInd; 
+        allBlockHashes.set(blockHash, { docInd: fullDocHashes.get(docHash).docInd }); 
       }
 
       if (blockMatch) {
-        let docInd = allBlockHashes[blockHash];
+        let docInd = allBlockHashes.get(blockHash).docInd;
         let file1 = docs[i].filePath;  // Current file of main file loop
         let file2 = docs[docInd].filePath; // File where match was found
         let inSameFile = file1 === file2;
@@ -178,9 +178,6 @@ function compare (docs) {
     }
   }
 
-  console.log(fullDocHashes);
-  console.log(messages);
-  console.log(allBlockHashes);
   return messages;
 }
 

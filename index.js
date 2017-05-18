@@ -8,6 +8,7 @@ const glob = require('glob');
 const path = require('path');
 const binaries = require('binary-extensions');
 
+const constants = require('./constants');
 const Message = require('./message');
 const Report = require('./report.js');
 const state = require('./state');
@@ -98,7 +99,7 @@ function compare (docs) {
       } else {
         // msgInd is a way to point to a "message" related to a hash, which is faster than iterating over all messages looking for a hash
         fullDocHashes.get(docHash).msgInd = messages.length;
-        messages.push(new Message([docs[i].filePath, docs[fullDocHashes.get(docHash).docInd].filePath], 'identical file', docHash));
+        messages.push(new Message([docs[i].filePath, docs[fullDocHashes.get(docHash).docInd].filePath], constants.IDENTICAL_FILE, docHash));
       }
       // Increment the relevant counters for reporting
       state.dupedLines += numLines(docs[i].content);
@@ -150,7 +151,7 @@ function compare (docs) {
         if (inSameFile) {
           // TODO: Add count for number of times repeated in the same file
           state.numBlockDupesInFile++;
-          messages.push(new Message([file1], 'intra-file duplicate', blockHash, blocks[b]));
+          messages.push(new Message([file1], constants.INTRA_FILE_DUPLICATE, blockHash, blocks[b]));
         }
 
         if (!inSameFile && !firstTimeMatched) {
@@ -168,7 +169,7 @@ function compare (docs) {
           */
           let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
           if (dupeMsgInd === -1) {
-            messages.push(new Message([file1, file2], 'inter-file duplicate', blockHash, blocks[b]));
+            messages.push(new Message([file1, file2], constants.INTER_FILE_DUPLICATE, blockHash, blocks[b]));
           } else {
             messages[dupeMsgInd].content.push(blocks[b]);
             messages[dupeMsgInd].hashes.push(blockHash);

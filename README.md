@@ -54,7 +54,7 @@ See the [node-glob](https://github.com/isaacs/node-glob) project for options on 
 
 # Contributing
 ## Key Data Structures
-`allBlockHashes` is an object with `blockHash` as key and the value is the index with which the parent document can be looked up in the `docs` array.
+`allBlockHashes` is an object with `blockHash` as key and the value is is an object with `docInd` for looking up the corresponding document in the `docs` array and `msgInd` for looking up the corresponding message in the `messages` array.
 
-
+`fullDocHashes` is an object with `docHash` as a key and the value is an object with `docInd` for looking up the corresponding document in the `docs` array and `msgInd` for looking up the corresponding message in the `messages` array.
 

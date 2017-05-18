@@ -1,10 +1,11 @@
 'use strict';
-var chalk = require('chalk');
-let wtf = chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F'));
+const chalk = require('chalk');
+const constants = require('./constants');
+const wtf = chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F'));
 const typeMessages = new Map([
-  ['identical file', `are ${chalk.red('IDENTICAL')} ${wtf} !!! \n`],
-  ['inter-file duplicate', 'repeat the following: \n'],
-  ['intra-file duplicate', 'repeats the following within the file: \n']    
+  [constants.IDENTICAL_FILE, `are ${chalk.red('IDENTICAL')} ${wtf} !!! \n`],
+  [constants.INTER_FILE_DUPLICATE, 'repeat the following: \n'],
+  [constants.INTRA_FILE_DUPLICATE, 'repeats the following within the file: \n']    
 ]);
 
 class Message  {

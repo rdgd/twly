@@ -87,7 +87,7 @@ function compare (docs) {
     if (!fullDocMatched) {
       fullDocHashes.set(docHash, { docInd: i });
     } else {
-      makeDocMatchMessage(i, docHash, fullDocHashes, docs, messages);
+      handleDocMatch(i, docHash, fullDocHashes, docs, messages);
       state.dupedLines += numLines(docs[i].content);
       state.numFileDupes++;
       continue;
@@ -108,11 +108,28 @@ function compare (docs) {
       if (!meetsSizeCriteria(blocks[b], (config.minLines - 1), config.minChars)) { continue; }
       // First we must check if this block is even worth checking, as we have config params which set some criteria for the content size
       let blockHash = hashString(minifiedBlocks[b]);
-      let blockMatch = allBlockHashes.has(blockHash);
-      if (!blockMatch) {
+      let blockMatched = allBlockHashes.has(blockHash);
+      if (!blockMatched) {
         allBlockHashes.set(blockHash, { docInd: fullDocHashes.get(docHash).docInd }); 
       } else {
-        makeBlockMatchMessage(i, b, docs, blocks, minifiedBlocks, allBlockHashes, fullDocHashes, docHash, messages);
+        let block = blocks[b];
+        let docInd = allBlockHashes.get(blockHash).docInd;
+        let msg = handleBlockMatch(docs[i].filePath, docs[docInd].filePath, block, blockHash, docInd, docs, messages);
+
+        state.dupedLines += numLines(block);
+        state.numBlockDupes++;
+
+        if (msg) {
+          if (msg.file) { // Using this k => v existence as predicate doesn't sit right
+            msg.duplicateMsg.docs.push(msg.file);
+          } else if (msg.block) { // Using this k => v existence as predicate doesn't sit right
+            msg.duplicateMsg.content.push(msg.block);
+            msg.duplicateMsg.hashes.push(msg.blockHash);
+          } else {
+            messages.push(msg);
+            if (msg.type === constants.INTRA_FILE_DUPLICATE) { state.numBlockDupesInFile++; }
+          }
+        }
       }
     }
   }
@@ -120,49 +137,37 @@ function compare (docs) {
   return messages;
 }
 
-function makeBlockMatchMessage (i, b, docs, blocks, minifiedBlocks, allBlockHashes, fullDocHashes, docHash, messages) {
-  let block = blocks[b];
-  let blockHash = hashString(minifiedBlocks[b]);
-  let docInd = allBlockHashes.get(blockHash).docInd;
-  let file1 = docs[i].filePath;  // Current file of main file loop
-  let file2 = docs[docInd].filePath; // File where match was found
+// Returns a new message OR modifies an existing message
+function handleBlockMatch (file1, file2, block, blockHash, docInd, docs, messages) {
   let inSameFile = file1 === file2;
-  let dupeMsgInd = findDuplicateMsgInd(blockHash, messages);
+  let dupeMsgInd = messageIndexByHash(blockHash, messages);
+  let duplicateMsg = messages[dupeMsgInd];
   let firstTimeMatched = dupeMsgInd === -1;
+  let priorFileDupes = messageIndexByFiles([file1, file2], messages) !== -1;
 
-  state.dupedLines += numLines(block);
-  state.numBlockDupes++;
-
-  if (inSameFile) {
-    // TODO: Add count for number of times repeated in the same file
-    state.numBlockDupesInFile++;
-    messages.push(new Message([file1], constants.INTRA_FILE_DUPLICATE, blockHash, block));
-  }
+  if (inSameFile) { return new Message([file1], constants.INTRA_FILE_DUPLICATE, blockHash, block); } // TODO: Add count for number of times repeated in the same file
+  if (!inSameFile && firstTimeMatched && !priorFileDupes) { return new Message([file1, file2], constants.INTER_FILE_DUPLICATE, blockHash, block); }
 
   if (!inSameFile && !firstTimeMatched) {
     // This is also an 'inter-file duplicate' scenario
     let duplicateMsg = messages[dupeMsgInd];
     let alreadyReportedByCurrentFile = duplicateMsg.docs.indexOf(file1) > -1;
-    if (!alreadyReportedByCurrentFile) { duplicateMsg.docs.push(file1); }
+    if (!alreadyReportedByCurrentFile) {
+      return { duplicateMsg: duplicateMsg, file: file1 };
+    }
   }
 
-  if (!inSameFile && firstTimeMatched) {
+  if (!inSameFile && firstTimeMatched && priorFileDupes) {
     /*
       Need to figure out if there is a message with the same files for a message we are about to write,
       and if so, add the content to that message. TODO: We also need to be able to add that content's hash to an array
       of hashes instead of just a single hash so that we can pick up duplicate content still.
     */
-    let dupeMsgInd = getMsgIndByFiles([file1, file2], messages);
-    if (dupeMsgInd === -1) {
-      messages.push(new Message([file1, file2], constants.INTER_FILE_DUPLICATE, blockHash, block));
-    } else {
-      messages[dupeMsgInd].content.push(block);
-      messages[dupeMsgInd].hashes.push(blockHash);
-    }
+    return  { duplicateMsg, block, blockHash };
   }
 }
 
-function makeDocMatchMessage (i, docHash, fullDocHashes, docs, messages) {
+function handleDocMatch (i, docHash, fullDocHashes, docs, messages) {
   let existingMsgInd = fullDocHashes.get(docHash).msgInd;
   let previouslyMatched = existingMsgInd > -1;
   if (previouslyMatched) {
@@ -184,7 +189,7 @@ function report (messages) {
 }
 
 // Utility functions used throughout the above code ^^^
-function findDuplicateMsgInd (hash, msgs) {
+function messageIndexByHash (hash, msgs) {
   let dupeInd = -1;
   for (let i = 0; i < msgs.length; i++) {
     if (msgs[i].hashes && msgs[i].hashes.indexOf(hash) > -1) {
@@ -196,15 +201,12 @@ function findDuplicateMsgInd (hash, msgs) {
   return dupeInd;
 }
 
-function getMsgIndByFiles (files, msgs) {
+function messageIndexByFiles (files, msgs) {
   let ind = -1;
 
   for (let m = 0; m < msgs.length; m++) {
-    let hasAllFiles = false;
-    files.forEach(function (file, f) {
-      hasAllFiles = msgs[m].docs.indexOf(file) > -1;
-    });
-    if (hasAllFiles) { ind = m; break;}
+    let hasAllFiles = files.filter((file) => msgs[m].docs.indexOf(file) > -1).length === files.length;
+    if (hasAllFiles) { ind = m; break; }
   }
   return ind;
 }

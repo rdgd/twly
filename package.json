@@ -26,5 +26,9 @@
     "commander": "^2.9.0",
     "console.table": "^0.7.0",
     "glob": "^7.0.6"
+  },
+  "devDependencies": {
+    "jest": "^20.0.3",
+    "rewire": "^2.5.2"
   }
 }

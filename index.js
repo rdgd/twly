@@ -17,17 +17,16 @@ const isCli = require.main === module;
 const cli = isCli ? require('commander') : null;
 var config = {};
 
-cli
-  .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
-  .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
-  .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
-  .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
-  .option('-b, --boring', 'Don\'t show TWLY picture on run')
-  .parse(process.argv);
-
 isCli && initCli();
 
 function initCli () {
+  cli
+    .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
+    .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
+    .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
+    .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
+    .option('-b, --boring', 'Don\'t show TWLY picture on run')
+    .parse(process.argv);
   // Length of three indicates only one arg passed, which we assume is a glob
   let glob = process.argv.length === 3 ? process.argv[2] : cli.files;
   let runtimeConf = { files: glob };
@@ -38,12 +37,12 @@ function initCli () {
   if (cli.lines) { runtimeConf.minLines = cli.lines; }
   if (cli.chars) { runtimeConf.minChars = cli.chars; }
 
-  main(runtimeConf);
+  run(runtimeConf);
 }
 
 // TODO: If config.files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
 // This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings. 
-function main (runtimeConf = {}) {
+function run (runtimeConf = {}) {
   config = (require('./config'))(runtimeConf);
   return read(config.files, config)
     .then(docs => compare(docs))
@@ -213,12 +212,12 @@ function messageIndexByFiles (files, msgs) {
 
 function hasMoreNewlinesThan (p, n, eq) {
   let matches = p.match(/\n/g);
-  return eq ? (matches && matches.length >= n) : (matches && matches.length > n);
+  return eq ? (matches && matches.length + 1 >= n) : (matches && matches.length + 1 > n);
 }
 
 function numLines (s) {
   let matches = s.match(/\n/g);
-  return matches ? matches.length : 0;
+  return matches ? matches.length + 1 : 0;
 }
 
 function meetsSizeCriteria (p, minLines, minChars) {
@@ -249,4 +248,4 @@ function isTextFile (filePath) {
    return !binaries.includes(filePath.split('.').pop());
 }
 
-module.exports = main;
+module.exports = run;

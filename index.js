@@ -120,8 +120,14 @@ function compare (docs) {
         state.numBlockDupes++;
 
         if (msg) {
-          if (msg.file) { // Using this k => v existence as predicate doesn't sit right
-            msg.duplicateMsg.docs.push(msg.file);
+          if (Array.isArray(msg)) { 
+            msg.forEach((m, i) => {
+              if (messages[m.duplicateMsgInd].type !== constants.INTRA_FILE_DUPLICATE) {
+                messages[m.duplicateMsgInd].docs.push(m.file);
+              } else {
+                messages.push(new Message([docs[i].filePath, m.file], constants.INTER_FILE_DUPLICATE, blockHash, block));
+              }
+            });
           } else if (msg.block) { // Using this k => v existence as predicate doesn't sit right
             msg.duplicateMsg.content.push(msg.block);
             msg.duplicateMsg.hashes.push(msg.blockHash);
@@ -141,9 +147,9 @@ function compare (docs) {
 function handleBlockMatch (file1, file2, block, blockHash, docInd, docs, messages) {
   let inSameFile = file1 === file2;
 
-  let dupeBlockMsgInd = messageIndexByHash(blockHash, messages);
-  let duplicateBlockMsg = messages[dupeBlockMsgInd];
-  let firstTimeMatched = dupeBlockMsgInd === -1;
+  let dupeBlockMsgIndexes = messageIndexesByHash(blockHash, messages); // Only returns the FIRST match!!!
+  //let duplicateBlockMsgs = messages[dupeBlockMsgInd];
+  let firstTimeMatched = dupeBlockMsgIndexes.length === 0;
 
   let dupeFileMsgInd = messageIndexByFiles([file1, file2], messages);
   let dupeFileMsg = messages[dupeFileMsgInd];
@@ -154,10 +160,12 @@ function handleBlockMatch (file1, file2, block, blockHash, docInd, docs, message
 
   if (!inSameFile && !firstTimeMatched) {
     // This is also an 'inter-file duplicate' scenario
-    let alreadyReportedByCurrentFile = duplicateBlockMsg.docs.includes(file1);
-    if (!alreadyReportedByCurrentFile) {
-      return { duplicateMsg: duplicateBlockMsg, file: file1 };
-    }
+    return dupeBlockMsgIndexes.map((i) => {
+      let alreadyReportedByCurrentFile = messages[i].docs.includes(file1);
+      if (!alreadyReportedByCurrentFile) {
+        return { duplicateMsgInd: i, file: file1 };
+      }
+    }).filter(m => m);
   }
 
   if (!inSameFile && firstTimeMatched && priorFileDupes) {
@@ -192,12 +200,11 @@ function report (messages) {
 }
 
 // Utility functions used throughout the above code ^^^
-function messageIndexByHash (hash, msgs) {
-  let dupeInd = -1;
+function messageIndexesByHash (hash, msgs) {
+  let dupeInd = [];
   for (let i = 0; i < msgs.length; i++) {
     if (msgs[i].hashes && msgs[i].hashes.includes(hash)) {
-      dupeInd = i;
-      break;
+      dupeInd.push(i);
     }
   }
 

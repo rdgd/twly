@@ -1,0 +1,10 @@
+{
+  "threshold": 99.27,
+  "ignore": [
+    "node_modules/**",
+    ".git/**",
+    "coverage/**",
+    "someotherdir/**"
+  ],
+  "minChars": 200
+}

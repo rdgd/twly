@@ -1,0 +1,27 @@
+.query-field-loanguid {
+    float: left;
+    margin-right:10px;
+    width: 300px;
+}
+.query-field-email {
+    float: left;
+    margin-right:10px;
+    width: 250px;
+}
+.query-field-date {
+    float: left;
+    margin-right:10px;
+    width: 100px;
+}
+.query-field-checkbox {
+    float: left;
+    margin-right:10px;
+}
+.gridStyle {
+    border: 1px solid rgb(212,212,212);
+    width: 100%; 
+    height: 400px
+}
+/*table.table-half {
+    width: 500px;
+}*/

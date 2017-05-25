@@ -1,5 +1,5 @@
 const rewire = require('rewire');
-const twly = rewire('../index');
+const twly = rewire('./index');
 const Message = require('../message');
 
 const messageIndexByHash = twly.__get__('messageIndexByHash');
@@ -14,17 +14,19 @@ const removeEmpty = twly.__get__('removeEmpty');
 const minify = twly.__get__('minify');
 const isTextFile = twly.__get__('isTextFile');
 
-test('messageIndexByHash', () => {
-  let file = 'foo.js'
+function makeMessages () {
+  let file = 'foo.js';
   let hash = '3858f62230ac3c915f300c664312c63';
-  let msgs = [new Message([file], 'some type', hash)];
-  expect(messageIndexByHash(hash, msgs)).toEqual(0);
+  return [new Message([file], 'some type', hash)];
+}
+
+test('messageIndexByHash', () => {
+  let msgs = makeMessages();
+  expect(messageIndexByHash('3858f62230ac3c915f300c664312c63', msgs)).toEqual(0);
 });
 
-test('messageIndexByFiles', () => {
-  let file = 'foo.js';
-  let hash = '3858f62230ac3c915f300c664312c63'
-  let msgs = [new Message([file], 'some type', hash)];
+test('messageIndexByFiles', () => { // Make sure to account for multiple messages with the same files!
+  let msgs = makeMessages();
   expect(messageIndexByFiles(['foo.js'], msgs)).toEqual(0);
 });
 

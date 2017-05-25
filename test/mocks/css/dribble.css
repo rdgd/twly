@@ -1,0 +1,43 @@
+.query-field-email {
+    float: left;
+    margin-right:10px;
+    width: 250px;
+}
+.query-field-date {
+    float: left;
+    margin-right:10px;
+    width: 100px;
+}
+
+.query-field-email {
+    float: left;
+    margin-right:10px;
+    width: 250px;
+}
+.query-field-date {
+    float: right;
+    margin-right:10px;
+    width: 100px;
+}
+
+.-field-email {
+    float: left;
+    margin-right:10px;
+    width: 250px;
+}
+.field-date {
+    float: right;
+    margin-right:10px;
+    width: 100px;
+}
+
+.-field-email {
+    float: left;
+    margin-right:10px;
+    width: 250px;
+}
+.field-date {
+    float: right;
+    margin-right:10px;
+    width: 100px;
+}

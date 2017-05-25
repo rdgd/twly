@@ -12,5 +12,6 @@ module.exports = {
   threshold: 95,
   exitOnFailure: true,
   minLines: 4,
-  minChars: 100
+  minChars: 100,
+  trc: '.trc'
 };

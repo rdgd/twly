@@ -26,6 +26,7 @@ function initCli () {
     .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
     .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
     .option('-b, --boring', 'Don\'t show TWLY picture on run')
+    .option('-t, --trc', 'Path to TWLY config file')
     .parse(process.argv);
   // Length of three indicates only one arg passed, which we assume is a glob
   let glob = process.argv.length === 3 ? process.argv[2] : cli.files;
@@ -47,7 +48,7 @@ function run (runtimeConf = {}) {
   return read(config.files, config)
     .then(docs => compare(docs))
     .then(messages => report(messages))
-    .catch((err) => { throw err; });
+    .catch(err => { throw err; });
 }
 
 function read (pathsToRead, config) {

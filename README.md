@@ -9,8 +9,6 @@
 </table>
 <td>
 
-[![Build Status](https://ciserver.me/job/twly-test/badge/icon)](https://ciserver.me/job/twly-test/)
-
 # twly?
 
 <b>twly</b> (pronounced "towel-E") is a static analysis tool which can help you keep your code DRY (Don't Repeat Yourself) by letting you know where you have copy and pasted entire files or portions of them. Run twly on a directory, and twly will magically generate a report for you indicating what has been repeated and in which files. twly is language agnostic and can be used on any text document.
@@ -55,6 +53,10 @@ For a list of available CLI arguments run command `twly --help`.
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
 
 # Contributing
+## Automated Builds
+* A build for the project is run in Jenkins every hour
+* You can view the latest build [here](https://ciserver.me/job/twly-test)
+
 ## Code Style and Tests... automate it
 * `npm install:hooks`
 * This will install a precommit hook that will run lint and tests every time you make a commit

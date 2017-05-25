@@ -53,6 +53,10 @@ For a list of available CLI arguments run command `twly --help`.
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
 
 # Contributing
+## Code Style and Tests... automate it
+* `npm install:hooks`
+* This will install a precommit hook that will run lint and tests every time you make a commit
+
 ## Introducing Changes
 * Cut a branch off of develop, name it whatever you want
 * Try to keep the number of changes introduced in a branch to a reasonably defined scope

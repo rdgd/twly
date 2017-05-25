@@ -140,20 +140,23 @@ function compare (docs) {
 // Returns a new message OR modifies an existing message
 function handleBlockMatch (file1, file2, block, blockHash, docInd, docs, messages) {
   let inSameFile = file1 === file2;
-  let dupeMsgInd = messageIndexByHash(blockHash, messages);
-  let duplicateMsg = messages[dupeMsgInd];
-  let firstTimeMatched = dupeMsgInd === -1;
-  let priorFileDupes = messageIndexByFiles([file1, file2], messages) !== -1;
+
+  let dupeBlockMsgInd = messageIndexByHash(blockHash, messages);
+  let duplicateBlockMsg = messages[dupeBlockMsgInd];
+  let firstTimeMatched = dupeBlockMsgInd === -1;
+
+  let dupeFileMsgInd = messageIndexByFiles([file1, file2], messages);
+  let dupeFileMsg = messages[dupeFileMsgInd];
+  let priorFileDupes = dupeFileMsgInd !== -1;
 
   if (inSameFile) { return new Message([file1], constants.INTRA_FILE_DUPLICATE, blockHash, block); } // TODO: Add count for number of times repeated in the same file
   if (!inSameFile && firstTimeMatched && !priorFileDupes) { return new Message([file1, file2], constants.INTER_FILE_DUPLICATE, blockHash, block); }
 
   if (!inSameFile && !firstTimeMatched) {
     // This is also an 'inter-file duplicate' scenario
-    let duplicateMsg = messages[dupeMsgInd];
-    let alreadyReportedByCurrentFile = duplicateMsg.docs.indexOf(file1) > -1;
+    let alreadyReportedByCurrentFile = duplicateBlockMsg.docs.includes(file1);
     if (!alreadyReportedByCurrentFile) {
-      return { duplicateMsg: duplicateMsg, file: file1 };
+      return { duplicateMsg: duplicateBlockMsg, file: file1 };
     }
   }
 
@@ -163,7 +166,7 @@ function handleBlockMatch (file1, file2, block, blockHash, docInd, docs, message
       and if so, add the content to that message. TODO: We also need to be able to add that content's hash to an array
       of hashes instead of just a single hash so that we can pick up duplicate content still.
     */
-    return  { duplicateMsg, block, blockHash };
+    return  { duplicateMsg: dupeFileMsg, block, blockHash };
   }
 }
 
@@ -172,7 +175,7 @@ function handleDocMatch (i, docHash, fullDocHashes, docs, messages) {
   let previouslyMatched = existingMsgInd > -1;
   if (previouslyMatched) {
     let msg = messages[existingMsgInd];
-    (msg.docs.indexOf(docs[i].filePath) === -1) && msg.docs.push(docs[i].filePath);
+    (!msg.docs.includes(docs[i].filePath)) && msg.docs.push(docs[i].filePath);
   } else {
     // msgInd is a way to point to a "message" related to a hash, which is faster than iterating over all messages looking for a hash
     fullDocHashes.get(docHash).msgInd = messages.length;
@@ -192,7 +195,7 @@ function report (messages) {
 function messageIndexByHash (hash, msgs) {
   let dupeInd = -1;
   for (let i = 0; i < msgs.length; i++) {
-    if (msgs[i].hashes && msgs[i].hashes.indexOf(hash) > -1) {
+    if (msgs[i].hashes && msgs[i].hashes.includes(hash)) {
       dupeInd = i;
       break;
     }
@@ -205,7 +208,7 @@ function messageIndexByFiles (files, msgs) {
   let ind = -1;
 
   for (let m = 0; m < msgs.length; m++) {
-    let hasAllFiles = files.filter((file) => msgs[m].docs.indexOf(file) > -1).length === files.length;
+    let hasAllFiles = files.filter((file) => msgs[m].docs.includes(file)).length === files.length;
     if (hasAllFiles) { ind = m; break; }
   }
   return ind;

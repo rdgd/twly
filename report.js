@@ -20,12 +20,12 @@ class Report {
 
   summarize (state) {
     return {
-      "Files Analyzed": state.totalFiles,
-      "Duplicate Files": state.numFileDupes,
-      "Lines Analyzed": state.totalLines,
-      "Duplicate Lines": state.dupedLines,
-      "Duplicate Blocks": state.numBlockDupes,
-      "Duplicate Blocks Within Files": state.numBlockDupesInFile
+      'Files Analyzed': state.totalFiles,
+      'Duplicate Files': state.numFileDupes,
+      'Lines Analyzed': state.totalLines,
+      'Duplicate Lines': state.dupedLines,
+      'Duplicate Blocks': state.numBlockDupes,
+      'Duplicate Blocks Within Files': state.numBlockDupesInFile
     };
   }
 

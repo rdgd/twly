@@ -2,7 +2,7 @@ const path = require('path');
 const configure = require('../config');
 
 test('Specifying a .trc file', () => {
-  let conf = configure({ minChars: 500, trc:  'test/test.trc' });
+  let conf = configure({ minChars: 500, trc: 'test/test.trc' });
   expect(conf.threshold).toEqual(99.27);
   expect(conf.minChars).toEqual(500);
   expect(conf.minLines).toEqual(4);

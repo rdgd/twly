@@ -7,7 +7,7 @@
     "twly": "index.js"
   },
   "scripts": {
-    "test": "jest"
+    "test": "eslint ./ && jest"
   },
   "keywords": [
     "lint",
@@ -32,6 +32,7 @@
     "glob": "^7.0.6"
   },
   "devDependencies": {
+    "eslint": "^3.19.0",
     "jest": "^20.0.3",
     "rewire": "^2.5.2",
     "strip-ansi": "^3.0.1"

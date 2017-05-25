@@ -42,7 +42,7 @@ function initCli () {
 }
 
 // TODO: If config.files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
-// This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings. 
+// This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings.
 function run (runtimeConf = {}) {
   config = (require('./config'))(runtimeConf);
   return read(config.files, config)
@@ -74,7 +74,7 @@ function read (pathsToRead, config) {
 function compare (docs) {
   let messages = [];
   let fullDocHashes = new Map();
-  let allBlockHashes = new Map(); 
+  let allBlockHashes = new Map();
 
   for (let i = 0; i < docs.length; i++) {
     let docHash = hashString(minify(docs[i].content));
@@ -120,7 +120,7 @@ function compare (docs) {
       let blockMatched = allBlockHashes.has(blockHash);
       let currentDocInd = fullDocHashes.get(docHash).docInd;
       if (!blockMatched) {
-        allBlockHashes.set(blockHash, { docIndexes: [currentDocInd] }); 
+        allBlockHashes.set(blockHash, { docIndexes: [currentDocInd] });
       } else {
         let block = blocks[b];
         state.dupedLines += numLines(block);
@@ -132,7 +132,7 @@ function compare (docs) {
         let matchedDocFilePaths = matchedDocs.map(di => di.filePath);
         let isIntraFileDupe = matchedDocs.includes(docs[i]);
 
-        if (!isIntraFileDupe) { 
+        if (!isIntraFileDupe) {
           docIndexes.push(fullDocHashes.get(docHash).docInd);
         } else { // TODO: Add count for number of times repeated in the same file
           let di = intraFileDupeInd(currentDoc, messages);
@@ -143,7 +143,7 @@ function compare (docs) {
           }
           continue;
         }
-        
+
         let dupeBlockMsgIndexes = interFileDupeMsgIndexesByHash(blockHash, messages);
         let dupeFileMsgInd = messageIndexByFiles(matchedDocFilePaths, messages);
 
@@ -266,7 +266,7 @@ function minify (s) {
 }
 
 function isTextFile (filePath) {
-   return !binaries.includes(filePath.split('.').pop());
+  return !binaries.includes(filePath.split('.').pop());
 }
 
 module.exports = run;

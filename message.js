@@ -5,7 +5,7 @@ const wtf = chalk.bgRed(chalk.blue('W') + chalk.yellow('T') + chalk.green('F'));
 const typeMessages = new Map([
   [constants.IDENTICAL_FILE, `are ${chalk.red('IDENTICAL')} ${wtf} !!! \n`],
   [constants.INTER_FILE_DUPLICATE, 'repeat the following: \n'],
-  [constants.INTRA_FILE_DUPLICATE, 'repeats the following within the file: \n']    
+  [constants.INTRA_FILE_DUPLICATE, 'repeats the following within the file: \n']
 ]);
 
 class Message  {
@@ -29,7 +29,7 @@ class Message  {
       this.docs.forEach((doc, i) => {
         let lastDoc = i === (this.docs.length + 1);
         let docName = chalk.yellow(this.docs[i]);
-        lastDoc ? msg += `and ${docName}` : msg += `${docName}, `; 
+        lastDoc ? msg += `and ${docName}` : msg += `${docName}, `;
       });
     }
 

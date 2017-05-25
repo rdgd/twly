@@ -2,7 +2,6 @@ const rewire = require('rewire');
 const twly = rewire('./index');
 const Message = require('../message');
 
-const messageIndexByHash = twly.__get__('messageIndexByHash');
 const messageIndexByFiles = twly.__get__('messageIndexByFiles');
 const hasMoreNewlinesThan = twly.__get__('hasMoreNewlinesThan');
 const numLines = twly.__get__('numLines');
@@ -19,11 +18,6 @@ function makeMessages () {
   let hash = '3858f62230ac3c915f300c664312c63';
   return [new Message([file], 'some type', hash)];
 }
-
-test('messageIndexByHash', () => {
-  let msgs = makeMessages();
-  expect(messageIndexByHash('3858f62230ac3c915f300c664312c63', msgs)).toEqual(0);
-});
 
 test('messageIndexByFiles', () => { // Make sure to account for multiple messages with the same files!
   let msgs = makeMessages();

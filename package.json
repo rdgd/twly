@@ -1,6 +1,6 @@
 {
   "name": "twly",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Wanna get DRY?",
   "main": "index.js",
   "bin": {

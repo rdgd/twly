@@ -11,7 +11,6 @@ const binaries = require('binary-extensions');
 const constants = require('./constants');
 const Message = require('./message');
 const Report = require('./report.js');
-const state = require('./state');
 const defaults = require('./defaults');
 const isCli = require.main === module;
 const cli = isCli ? require('commander') : null;
@@ -43,14 +42,15 @@ function initCli () {
 // TODO: If config.files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
 // This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings.
 function run (runtimeConf = {}) {
+  let state = require('./state');
   const config = (require('./config'))(runtimeConf);
-  return read(config.files, config)
-    .then(docs => compare(docs, config))
-    .then(messages => report(messages, config))
+  return read(config.files, config, state)
+    .then(docs => compare(docs, config, state))
+    .then(messages => report(messages, config, state))
     .catch(err => { throw err; });
 }
 
-function read (pathsToRead, config) {
+function read (pathsToRead, config, state) {
   return new Promise((resolve, reject) => {
     let docs = [];
 
@@ -70,7 +70,7 @@ function read (pathsToRead, config) {
   });
 }
 
-function compare (docs, config) {
+function compare (docs, config, state) {
   let messages = [];
   let fullDocHashes = new Map();
   let allBlockHashes = new Map();
@@ -163,28 +163,10 @@ function compare (docs, config) {
     }
   }
 
-  let normalizedMessages = [];
-  messages.forEach((m) => {
-    let matchedInd = -1;
-    for (var i = 0; i < normalizedMessages.length; i++) {
-      if (normalizedMessages[i].type !== constants.INTRA_FILE_DUPLICATE && new Set(m.docs.concat(normalizedMessages[i].docs)).size === m.docs.length) {
-        matchedInd = i; break;
-      }
-    }
-    if (matchedInd !== -1) {
-      normalizedMessages[matchedInd].content.push(m.content);
-    } else {
-      normalizedMessages.push(m);
-    }
-  });
-  return normalizedMessages;
+  return combineMessages(messages);
 }
 
-function matchBlockForDocs (paths1, paths2) {
-  return paths2.length === paths2.filter((p) => paths1.includes(p)).length;
-}
-
-function report (messages, config) {
+function report (messages, config, state) {
   state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
   let r = new Report(state, messages, config.threshold);
 
@@ -193,6 +175,23 @@ function report (messages, config) {
 }
 
 // Utility functions used throughout the above code ^^^
+function combineMessages (messages) {
+  let combinedMessages = [];
+  messages.forEach((m) => {
+    let matchedInd = -1;
+    for (var i = 0; i < combinedMessages.length; i++) {
+      if (combinedMessages[i].type !== constants.INTRA_FILE_DUPLICATE && new Set(m.docs.concat(combinedMessages[i].docs)).size === m.docs.length) {
+        matchedInd = i; break;
+      }
+    }
+    if (matchedInd !== -1) {
+      combinedMessages[matchedInd].content.push(m.content);
+    } else {
+      combinedMessages.push(m);
+    }
+  });
+  return combinedMessages;
+}
 
 function intraFileDupeInd (file1, msgs) {
   let dupeInd = -1;

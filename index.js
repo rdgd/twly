@@ -15,7 +15,6 @@ const state = require('./state');
 const defaults = require('./defaults');
 const isCli = require.main === module;
 const cli = isCli ? require('commander') : null;
-var config = {};
 
 isCli && initCli();
 
@@ -44,10 +43,10 @@ function initCli () {
 // TODO: If config.files is an array, then we want to iterate over that array and do a run for each. Targets is better name, though.
 // This application has 3 basic stages: (1) read files, (2) compare their contents, and (3) report TWLY's findings.
 function run (runtimeConf = {}) {
-  config = (require('./config'))(runtimeConf);
+  const config = (require('./config'))(runtimeConf);
   return read(config.files, config)
-    .then(docs => compare(docs))
-    .then(messages => report(messages))
+    .then(docs => compare(docs, config))
+    .then(messages => report(messages, config))
     .catch(err => { throw err; });
 }
 
@@ -71,7 +70,7 @@ function read (pathsToRead, config) {
   });
 }
 
-function compare (docs) {
+function compare (docs, config) {
   let messages = [];
   let fullDocHashes = new Map();
   let allBlockHashes = new Map();
@@ -185,9 +184,9 @@ function matchBlockForDocs (paths1, paths2) {
   return paths2.length === paths2.filter((p) => paths1.includes(p)).length;
 }
 
-function report (messages) {
+function report (messages, config) {
   state.numFileDupes = state.numFileDupes === 0 ? state.numFileDupes : (state.numFileDupes + 1);
-  let r = new Report(state, messages, config.failureThreshold);
+  let r = new Report(state, messages, config.threshold);
 
   config.logLevel === 'REPORT' && r.log(config.exitOnFailure);
   return r;

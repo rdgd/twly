@@ -20,7 +20,7 @@ isCli && initCli();
 function initCli () {
   cli
     .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
-    .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
+    .option('-th, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
     .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
     .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
     .option('-b, --boring', 'Don\'t show TWLY picture on run')

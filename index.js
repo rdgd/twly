@@ -19,12 +19,12 @@ isCli && initCli();
 
 function initCli () {
   cli
-    .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
-    .option('-t, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
-    .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
-    .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
     .option('-b, --boring', 'Don\'t show TWLY picture on run')
+    .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
+    .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
+    .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
     .option('-t, --trc', 'Path to TWLY config file')
+    .option('-T, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
     .parse(process.argv);
   // Length of three indicates only one arg passed, which we assume is a glob
   let glob = process.argv.length === 3 ? process.argv[2] : cli.files;

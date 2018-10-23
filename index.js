@@ -23,7 +23,7 @@ function initCli () {
     .option('-c, --chars [integer]', 'Minimum number of characters a block must have to be compared')
     .option('-f, --files [glob]', 'Files you would like to analyze', '**/*.*')
     .option('-l, --lines [integer]', 'Minimum number of lines a block must have to be compared')
-    .option('-t, --trc', 'Path to TWLY config file')
+    .option('-t, --trc [string]', 'Path to TWLY config file')
     .option('-T, --threshold [integer or floating point]', 'Specify the point at which you would like Towelie to fail')
     .parse(process.argv);
   // Length of three indicates only one arg passed, which we assume is a glob
@@ -35,6 +35,7 @@ function initCli () {
   if (cli.threshold) { runtimeConf.threshold = cli.threshold; }
   if (cli.lines) { runtimeConf.minLines = cli.lines; }
   if (cli.chars) { runtimeConf.minChars = cli.chars; }
+  if (cli.trc) { runtimeConf.trc = cli.trc; }
 
   run(runtimeConf);
 }

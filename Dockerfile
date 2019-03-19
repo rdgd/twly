@@ -1,6 +1,10 @@
 FROM node:alpine
 
-RUN npm install -g twly
+WORKDIR /twly
 
-ENTRYPOINT ["twly"]
+COPY . /twly
+
+RUN npm install
+
+ENTRYPOINT ["node", "/twly/index.js"]
 

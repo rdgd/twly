@@ -51,3 +51,12 @@ You can use twly by simply running the command `twly`. This will analyze all the
 For a list of available CLI arguments run command `twly --help`.
 
 See the [node-glob](https://github.com/isaacs/node-glob) project for options on how to specify files.
+
+# Docker Image
+
+A Dockerfile is provided. It can be be used like so:
+
+```
+twly> docker build -t twly .
+app> docker run --rm -t -v "$(pwd):/code" -w /code twly
+```
